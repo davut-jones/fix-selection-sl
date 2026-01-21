@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-st.title("CSV Dashboard")
+st.title("Dashboard Test")
 
 # Load CSV
 df = pd.read_csv("data.csv")
@@ -12,7 +12,7 @@ st.markdown(
     <div style="overflow-x: auto;">
         {table}
     </div>
-    """.format(table=df.head(5).to_html(index=False)),
+    """.format(table=df.head(3).to_html(index=False)),
     unsafe_allow_html=True
 )
 
