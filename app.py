@@ -4,24 +4,14 @@
 
 # standard python imports
 import streamlit as st
-from streamlit_option_menu import option_menu
+from streamlit_option_menu import option_menu # type: ignore
 import pandas as pd
-import altair as alt
 
 # customer streamlit views
-from views.overview import render as render_overview
-from views.label_accuracy import render as render_label_accuracy
-from views.fix_analysis import render as render_fix_analysis
-from views.raw_data import render as render_raw_data
-
-###########################
-### load and cache data ###
-###########################
-
-# load functions
-@st.cache_data
-def load_label_data():
-    return pd.read_csv("data/aug_nov_50k_calls.csv")
+from views.overview import render_view as render_overview
+from views.label_accuracy import render_view as render_label_accuracy
+from views.fix_analysis import render_view as render_fix_analysis
+from views.raw_data import render_view as render_raw_data
 
 ###################
 ### page config ###
@@ -32,6 +22,18 @@ dash_name = "Service Checker Call Label Modelling"
 
 # layout and tab title
 st.set_page_config(layout="wide", page_title=dash_name)
+
+###########################
+### load and cache data ###
+###########################
+
+# load functions
+@st.cache_data
+def load_label_data():
+    return pd.read_csv("data/aug_nov_50k_calls.csv")
+
+# load data
+df_label = load_label_data()
 
 ######################
 ### authentication ###
@@ -85,22 +87,56 @@ if st.session_state.authenticated:
             default_index=0,
         )
 
+        if selected_view != "Overview":
+
+            # global filters (only for non-overview views)
+            st.write("")
+            st.write("## Global Filters")
+
+            # call issue label filter
+            label_options = df_label["label"].unique().tolist()
+            selected_labels = st.multiselect(
+                "Select call issue label(s):",
+                options=label_options,
+                default=label_options
+            )
+
+            # selected outcome filter
+            outcome_options = df_label["selected_outcome_cleaned"].unique().tolist()
+
+            # multiselect
+            selected_outcomes = st.multiselect(
+                "Select outcome(s):",
+                options=outcome_options,
+                default=outcome_options
+            )
+
+    # apply filters
+    if selected_view == "Overview":
+        filtered_df = df_label.copy()
+    else:
+        filtered_df = df_label[
+            (df_label["label"].isin(selected_labels)) &
+            (df_label["selected_outcome_cleaned"].isin(selected_outcomes))
+        ]
+
     # dynamic title change for each view
     st.title(selected_view)
     st.divider()
 
     # view selection
     if selected_view == "Overview":
-        render_overview()
+        render_overview(df_label)
 
     elif selected_view == "Call Labelling Accuracy":
-        render_label_accuracy()
+        render_label_accuracy(filtered_df)
 
     elif selected_view == "Fix Analysis":
-        render_fix_analysis()
+        render_fix_analysis(filtered_df)
 
     elif selected_view == "Raw Label Data":
-        render_raw_data()
+        render_raw_data(filtered_df)
+
 
 
 
