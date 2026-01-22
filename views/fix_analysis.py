@@ -8,7 +8,7 @@ def render_view(df_filtered):
 
     # view titles
     st.subheader("Outcome breakdown by call issue label")
-    st.write("For each call issue label evaluate each selected outcome performance via repeat calls and churn")
+    st.write("For each call issue label evaluate selected outcome performance via repeat calls and churn")
 
     # view toggle
     view_mode = st.radio(
@@ -29,6 +29,11 @@ def render_view(df_filtered):
     total_all = st.session_state.get("df_label_total_rows", len(df_filtered))
     df_grouped["pct_total_all"] = (df_grouped["volume"] / total_all * 100).round(1)
 
+    # format percentage with % marks
+    df_grouped["pct_total_volume"] = df_grouped["pct_total_volume"].map(lambda x: f"{x:.1f}%")
+    df_grouped["pct_total_all"] = df_grouped["pct_total_all"].map(lambda x: f"{x:.1f}%")
+
+    # reset index
     df_grouped = df_grouped.sort_values(by="volume", ascending=False).reset_index(drop=True)
 
     # rename columns
@@ -53,6 +58,6 @@ def render_view(df_filtered):
                 st.dataframe(df_label_group, use_container_width=True)
 
     # remaining rows after filtering
-    st.caption(f"{len(df_filtered)} rows remaining after filtering")
+    st.caption(f"{len(df_filtered):,} rows remaining after filtering")
 
     st.divider()
