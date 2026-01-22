@@ -23,6 +23,15 @@ dash_name = "Service Checker Call Label Modelling"
 # layout and tab title
 st.set_page_config(layout="wide", page_title=dash_name)
 
+# markdown for bootstrap icons
+st.markdown(
+    """
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    """,
+    unsafe_allow_html=True
+)
+
 ###########################
 ### load and cache data ###
 ###########################
@@ -106,7 +115,7 @@ if st.session_state.authenticated:
     with st.sidebar:
         selected_view = option_menu(
             menu_title="Dashboard Views",
-            options=["Overview", "Call Labelling Accuracy", "Fix Analysis", "Raw Label Data"],
+            options=["Overview", "Call Labelling Accuracy", "Outcome Analysis", "Raw Label Data"],
             icons=["info-circle", "speedometer2", "table", "database"],
             menu_icon="layers",
             default_index=0,
@@ -146,8 +155,11 @@ if st.session_state.authenticated:
         ]
 
     # dynamic title change for each view
-    st.title(selected_view)
-    st.divider()
+    if selected_view == "Overview":
+        st.title("Service Checker Call Label Modelling")
+    else:
+        st.title(selected_view)
+        st.divider()
 
     # view selection
     if selected_view == "Overview":
@@ -156,7 +168,7 @@ if st.session_state.authenticated:
     elif selected_view == "Call Labelling Accuracy":
         render_label_accuracy(df_filtered)
 
-    elif selected_view == "Fix Analysis":
+    elif selected_view == "Outcome Analysis":
         render_fix_analysis(df_filtered)
 
     elif selected_view == "Raw Label Data":
