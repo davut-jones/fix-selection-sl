@@ -4,7 +4,7 @@
 
 # standard python imports
 import streamlit as st
-from streamlit_option_menu import option_menu # type: ignore
+from streamlit_option_menu import option_menu  # type: ignore
 import pandas as pd
 
 # customer streamlit views
@@ -34,6 +34,9 @@ def load_label_data():
 
 # load data
 df_label = load_label_data()
+
+# store variable with total rows
+st.session_state["df_label_total_rows"] = len(df_label)
 
 ######################
 ### authentication ###
@@ -77,12 +80,34 @@ if st.session_state.authenticated:
     ### navigation and main view ####
     #################################
 
+    # define global filter options
+    label_options = sorted(df_label["label"].dropna().unique().tolist())
+    outcome_options = sorted(df_label["selected_outcome_cleaned"].dropna().unique().tolist())
+
+    # initialise session state for filters
+    if "selected_labels" not in st.session_state:
+        st.session_state.selected_labels = label_options
+
+    if "selected_outcomes" not in st.session_state:
+        st.session_state.selected_outcomes = outcome_options
+
+    # force list type (prevents single-select UI bug)
+    st.session_state.selected_labels = list(st.session_state.selected_labels)
+    st.session_state.selected_outcomes = list(st.session_state.selected_outcomes)
+
+    # reset state if options changed (deploy / data updates)
+    if set(st.session_state.selected_labels) - set(label_options):
+        st.session_state.selected_labels = label_options
+
+    if set(st.session_state.selected_outcomes) - set(outcome_options):
+        st.session_state.selected_outcomes = outcome_options
+
     # sidebar to navigate views
     with st.sidebar:
         selected_view = option_menu(
             menu_title="Dashboard Views",
-            options=["Overview","Call Labelling Accuracy", "Fix Analysis", "Raw Label Data"],
-            icons=["info-circle","speedometer2", "table", "database"],
+            options=["Overview", "Call Labelling Accuracy", "Fix Analysis", "Raw Label Data"],
+            icons=["info-circle", "speedometer2", "table", "database"],
             menu_icon="layers",
             default_index=0,
         )
@@ -93,31 +118,31 @@ if st.session_state.authenticated:
             st.write("")
             st.write("## Global Filters")
 
+            if st.button("Reset all filters"):
+                st.session_state.selected_labels = label_options
+                st.session_state.selected_outcomes = outcome_options
+
             # call issue label filter
-            label_options = df_label["label"].unique().tolist()
-            selected_labels = st.multiselect(
+            st.multiselect(
                 "Select call issue label(s):",
                 options=label_options,
-                default=label_options
+                key="selected_labels"
             )
 
             # selected outcome filter
-            outcome_options = df_label["selected_outcome_cleaned"].unique().tolist()
-
-            # multiselect
-            selected_outcomes = st.multiselect(
+            st.multiselect(
                 "Select outcome(s):",
                 options=outcome_options,
-                default=outcome_options
+                key="selected_outcomes"
             )
 
     # apply filters
     if selected_view == "Overview":
-        filtered_df = df_label.copy()
+        df_filtered = df_label.copy()
     else:
-        filtered_df = df_label[
-            (df_label["label"].isin(selected_labels)) &
-            (df_label["selected_outcome_cleaned"].isin(selected_outcomes))
+        df_filtered = df_label[
+            (df_label["label"].isin(st.session_state.selected_labels)) &
+            (df_label["selected_outcome_cleaned"].isin(st.session_state.selected_outcomes))
         ]
 
     # dynamic title change for each view
@@ -129,44 +154,10 @@ if st.session_state.authenticated:
         render_overview(df_label)
 
     elif selected_view == "Call Labelling Accuracy":
-        render_label_accuracy(filtered_df)
+        render_label_accuracy(df_filtered)
 
     elif selected_view == "Fix Analysis":
-        render_fix_analysis(filtered_df)
+        render_fix_analysis(df_filtered)
 
     elif selected_view == "Raw Label Data":
-        render_raw_data(filtered_df)
-
-
-
-
-
-# # page title
-# st.title(dash_name)
-# st.write("")
-# st.write("")
-
-# # load csv
-# df = pd.read_csv("data/aug_nov_50k_calls.csv")
-
-# # # button to show table data
-# # if st.button("Show data"):
-
-# ### label and selected outcome split ###
-# st.subheader("Label and Selected Outcome Splits")
-
-# # filters
-# selected_labels = st.multiselect("Select call issues types", options=sorted(df["label"].unique().tolist()), default=sorted(df["label"].unique().tolist()))
-
-# # filter df
-# filtered_df = df[df["label"].isin(selected_labels)]
-# st.write(f"Showing {len(filtered_df)} rows remaining after filtering")
-
-# # aggregate for label and selected_outcome view
-# grouped = filtered_df.groupby(["label", "selected_outcome_cleaned"]).size().reset_index(name="volume")
-# grouped["pct_total_volume"] = grouped["volume"] / grouped["volume"].sum()
-# grouped["pct_total_volume"] = (grouped["pct_total_volume"] * 100).round(2)
-# grouped["pct_total_volume"] = grouped["pct_total_volume"].map(lambda x: f"{x:.1f}%")
-# grouped = grouped.sort_values(by="volume", ascending=False)
-
-# st.dataframe(grouped, height=400)
+        render_raw_data(df_filtered)
