@@ -48,6 +48,8 @@ def render_view(df_filtered):
             volume=("label", "size"),
             avg_outcome_cost=("outcome_cost", "mean"),
             total_outcome_cost=("outcome_cost", "sum"),
+            call_rate_7d=("sc_call_next_7d_flag", "mean"),
+            churn_rate_30d=("bb_churn_next_30d", "mean"),
         )
         .reset_index()
         .sort_values("volume", ascending=False)
@@ -65,7 +67,9 @@ def render_view(df_filtered):
         "avg_outcome_cost": "Avg. Outcome Cost (£)",
         "total_outcome_cost": "Total Outcome Cost (£)",
         "pct_filtered": "% of Filtered",
-        "pct_all_calls": "% of All Calls"
+        "pct_all_calls": "% of All Calls",
+        "call_rate_7d": "Call Rate (7d)",
+        "churn_rate_30d": "Churn Rate (30d)",
     })
 
     # format columns
@@ -73,6 +77,9 @@ def render_view(df_filtered):
     df_label_summary["Total Outcome Cost (£)"] = df_label_summary["Total Outcome Cost (£)"].map(lambda x: f"£{x:,.0f}")
     df_label_summary["% of Filtered"] = df_label_summary["% of Filtered"].map(lambda x: f"{x:.1%}")
     df_label_summary["% of All Calls"] = df_label_summary["% of All Calls"].map(lambda x: f"{x:.1%}")
+    df_label_summary["Call Rate (7d)"] = df_label_summary["Call Rate (7d)"].map(lambda x: f"{x:.1%}")
+    df_label_summary["Churn Rate (30d)"] = df_label_summary["Churn Rate (30d)"].map(lambda x: f"{x:.1%}")
+
 
     # reset index for table
     df_label_summary = df_label_summary.reset_index(drop=True)
@@ -137,6 +144,8 @@ def render_view(df_filtered):
             volume=("selected_outcome_cleaned", "size"),
             avg_outcome_cost=("outcome_cost", "mean"),
             total_outcome_cost=("outcome_cost", "sum"),
+            call_rate_7d=("sc_call_next_7d_flag", "mean"),
+            churn_rate_30d=("bb_churn_next_30d", "mean"),
         )
         .reset_index()
         .sort_values("volume", ascending=False)
@@ -154,7 +163,9 @@ def render_view(df_filtered):
         "avg_outcome_cost": "Avg. Outcome Cost (£)",
         "total_outcome_cost": "Total Outcome Cost (£)",
         "pct_filtered": "% of Filtered",
-        "pct_all_calls": "% of All Calls"
+        "pct_all_calls": "% of All Calls",
+        "call_rate_7d": "Call Rate (7d)",
+        "churn_rate_30d": "Churn Rate (30d)",
     })
 
     # format columns
@@ -162,6 +173,9 @@ def render_view(df_filtered):
     df_outcome_summary["Total Outcome Cost (£)"] = df_outcome_summary["Total Outcome Cost (£)"].map(lambda x: f"£{x:,.0f}")
     df_outcome_summary["% of Filtered"] = df_outcome_summary["% of Filtered"].map(lambda x: f"{x:.1%}")
     df_outcome_summary["% of All Calls"] = df_outcome_summary["% of All Calls"].map(lambda x: f"{x:.1%}")
+    df_outcome_summary["Call Rate (7d)"] = df_outcome_summary["Call Rate (7d)"].map(lambda x: f"{x:.1%}")
+    df_outcome_summary["Churn Rate (30d)"] = df_outcome_summary["Churn Rate (30d)"].map(lambda x: f"{x:.1%}")
+
 
     # reset index for table
     df_outcome_summary = df_outcome_summary.reset_index(drop=True)
