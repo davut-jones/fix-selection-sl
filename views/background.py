@@ -2,7 +2,7 @@ import streamlit as st
 
 def render_view(df_filtered):
 
-    st.write("")
+    st.write("\n\n\n\n")
     st.write(
         """
         This dashboard provides background context and guidance for the **Service Checker Call Label Modelling** work.

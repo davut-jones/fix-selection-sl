@@ -40,7 +40,9 @@ st.markdown(
 # load functions
 @st.cache_data
 def load_label_data():
-    return pd.read_csv("data/aug_nox_50k_calls_with_transcripts.csv")
+    df = pd.read_csv("data/aug_nox_50k_calls_with_transcripts.csv")
+    df["call_date"] = pd.to_datetime(df["call_date"]).dt.date
+    return df
 
 # load data
 df_label = load_label_data()
@@ -112,6 +114,16 @@ if st.session_state.authenticated:
     if set(st.session_state.selected_outcomes) - set(outcome_options):
         st.session_state.selected_outcomes = outcome_options
 
+    # date range filter setup
+    min_date = df_label["call_date"].min()
+    max_date = df_label["call_date"].max()
+
+    if "start_date" not in st.session_state:
+        st.session_state.start_date = min_date
+
+    if "end_date" not in st.session_state:
+        st.session_state.end_date = max_date
+
     # sidebar to navigate views
     with st.sidebar:
         selected_view = option_menu(
@@ -120,6 +132,7 @@ if st.session_state.authenticated:
             icons=["info-circle", "card-checklist", "speedometer2", "table", "database"],
             menu_icon="layers",
             default_index=0,
+            key="selected_view"
         )
 
         if selected_view != "Background":
@@ -131,17 +144,34 @@ if st.session_state.authenticated:
             if st.button("Reset all filters"):
                 st.session_state.selected_labels = label_options
                 st.session_state.selected_outcomes = outcome_options
+                st.session_state.start_date = min_date
+                st.session_state.end_date = max_date
+
+            # Date filters
+            st.date_input(
+                "Start of period:",
+                min_value=min_date,
+                max_value=max_date,
+                key="start_date"
+            )
+
+            st.date_input(
+                "End of period:",
+                min_value=min_date,
+                max_value=max_date,
+                key="end_date"
+            )
 
             # call issue label filter
             st.multiselect(
-                "Select call issue label(s):",
+                f"Select call issue labels ({len(st.session_state.selected_labels)} selected):",
                 options=label_options,
                 key="selected_labels"
             )
 
             # selected outcome filter
             st.multiselect(
-                "Select outcome(s):",
+                f"Select outcomes ({len(st.session_state.selected_outcomes)} selected):",
                 options=outcome_options,
                 key="selected_outcomes"
             )
@@ -152,7 +182,11 @@ if st.session_state.authenticated:
     else:
         df_filtered = df_label[
             (df_label["label"].isin(st.session_state.selected_labels)) &
-            (df_label["selected_outcome_cleaned"].isin(st.session_state.selected_outcomes))
+            (df_label["selected_outcome_cleaned"].isin(st.session_state.selected_outcomes)) &
+            (df_label["call_date"].between(
+                st.session_state.start_date,
+                st.session_state.end_date
+            ))
         ]
 
     # dynamic title change for each view
@@ -161,7 +195,6 @@ if st.session_state.authenticated:
         if selected_view == "Background"
         else selected_view
     )
-    st.divider()
 
     # view selection
     if selected_view == "Background":
