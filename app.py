@@ -8,9 +8,10 @@ from streamlit_option_menu import option_menu  # type: ignore
 import pandas as pd
 
 # customer streamlit views
+from views.background import render_view as render_background
 from views.overview import render_view as render_overview
-from views.label_accuracy import render_view as render_label_accuracy
-from views.fix_analysis import render_view as render_fix_analysis
+from views.label_evaluation import render_view as render_label_evaluation
+from views.outcome_analysis import render_view as render_outcome_analysis
 from views.raw_data import render_view as render_raw_data
 
 ###################
@@ -39,7 +40,7 @@ st.markdown(
 # load functions
 @st.cache_data
 def load_label_data():
-    return pd.read_csv("data/aug_nov_50k_calls.csv")
+    return pd.read_csv("data/aug_nox_50k_calls_with_transcripts.csv")
 
 # load data
 df_label = load_label_data()
@@ -114,14 +115,14 @@ if st.session_state.authenticated:
     # sidebar to navigate views
     with st.sidebar:
         selected_view = option_menu(
-            menu_title="Dashboard Views",
-            options=["Overview", "Call Labelling Accuracy", "Outcome Analysis", "Raw Label Data"],
-            icons=["info-circle", "speedometer2", "table", "database"],
+            menu_title="Sections",
+            options=["Background", "Overview", "Label Evaluation", "Outcome Analysis", "Raw Label Data"],
+            icons=["info-circle", "card-checklist", "speedometer2", "table", "database"],
             menu_icon="layers",
             default_index=0,
         )
 
-        if selected_view != "Overview":
+        if selected_view != "Background":
 
             # global filters (only for non-overview views)
             st.write("")
@@ -146,7 +147,7 @@ if st.session_state.authenticated:
             )
 
     # apply filters
-    if selected_view == "Overview":
+    if selected_view == "Background":
         df_filtered = df_label.copy()
     else:
         df_filtered = df_label[
@@ -155,21 +156,25 @@ if st.session_state.authenticated:
         ]
 
     # dynamic title change for each view
-    if selected_view == "Overview":
-        st.title("Service Checker Call Label Modelling")
-    else:
-        st.title(selected_view)
-        st.divider()
+    st.title(
+        "Service Checker Call Label Modelling"
+        if selected_view == "Background"
+        else selected_view
+    )
+    st.divider()
 
     # view selection
-    if selected_view == "Overview":
-        render_overview(df_label)
+    if selected_view == "Background":
+        render_background(df_label)
 
-    elif selected_view == "Call Labelling Accuracy":
-        render_label_accuracy(df_filtered)
+    elif selected_view == "Overview":
+        render_overview(df_filtered)
+
+    elif selected_view == "Label Evaluation":
+        render_label_evaluation(df_filtered)
 
     elif selected_view == "Outcome Analysis":
-        render_fix_analysis(df_filtered)
+        render_outcome_analysis(df_filtered)
 
     elif selected_view == "Raw Label Data":
         render_raw_data(df_filtered)
