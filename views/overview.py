@@ -84,7 +84,7 @@ def render_view(df_filtered):
     # reset index for table
     df_label_summary = df_label_summary.reset_index(drop=True)
 
-    st.dataframe(df_label_summary, use_container_width=True)
+    st.dataframe(df_label_summary, width='stretch')
     st.write("\n\n\n\n")
 
     show_label_chart = st.checkbox(
@@ -129,7 +129,7 @@ def render_view(df_filtered):
             .properties(height=45 * len(chart_df))
         )
 
-        st.altair_chart(chart, use_container_width=True)
+        st.altair_chart(chart, width='stretch')
 
 
     st.divider()
@@ -180,7 +180,7 @@ def render_view(df_filtered):
     # reset index for table
     df_outcome_summary = df_outcome_summary.reset_index(drop=True)
 
-    st.dataframe(df_outcome_summary, use_container_width=True)
+    st.dataframe(df_outcome_summary, width='stretch')
     st.write("\n\n\n\n")
 
     show_outcome_chart = st.checkbox(
@@ -225,7 +225,7 @@ def render_view(df_filtered):
             .properties(height=35 * len(chart_df))
         )
 
-        st.altair_chart(chart, use_container_width=True)
+        st.altair_chart(chart, width='stretch')
 
 
     st.divider()

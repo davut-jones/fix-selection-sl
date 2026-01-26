@@ -1,16 +1,28 @@
-# fix-selection-sl
+# Service Checker Call Label Modelling
 
-## Local setup
+## First time setup
 
 ### 0 - clone repo
 git clone ...
 
 ### 1 - activate venv
+python3 -m venv venv 
 source venv/bin/activate
 
-### 2 - start streamlit
-streamlit run app.py
+### 2 - install packages
+python3 -m pip install --upgrade pip
+python3 -m pip install -r requirements.txt
 
+### 3 - start streamlit
+python3 -m streamlit run app.py
+
+## Regular use
+source venv/bin/activate
+python3 -m streamlit run app.py
+
+## Pip freeze with minimal packages
+python3 -m pip install pipreqs
+pipreqs . --force
 
 ## Access
 

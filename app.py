@@ -40,7 +40,12 @@ st.markdown(
 # load functions
 @st.cache_data
 def load_label_data():
-    df = pd.read_csv("data/aug_nox_50k_calls_with_transcripts.csv")
+    df = pd.read_csv(
+        "data/aug_nox_50k_calls_with_transcripts.csv",
+        dtype={
+            "other_label": "string"
+        }
+    )
     df["call_date"] = pd.to_datetime(df["call_date"]).dt.date
     return df
 
