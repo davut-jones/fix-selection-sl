@@ -41,7 +41,7 @@ st.markdown(
 @st.cache_data
 def load_label_data():
     df = pd.read_csv(
-        "data/aug_nox_50k_calls_with_transcripts.csv",
+        "data/aug_nox_50k_calls_all_data.csv",
         dtype={
             "other_label": "string"
         }
@@ -54,6 +54,8 @@ df_label = load_label_data()
 
 # store variable with total rows
 st.session_state["df_label_total_rows"] = len(df_label)
+st.session_state["df_label_min_dt"] = df_label["call_date"].min()
+st.session_state["df_label_max_dt"] = df_label["call_date"].max()
 
 ######################
 ### authentication ###
@@ -120,8 +122,8 @@ if st.session_state.authenticated:
         st.session_state.selected_outcomes = outcome_options
 
     # date range filter setup
-    min_date = df_label["call_date"].min()
-    max_date = df_label["call_date"].max()
+    min_date = st.session_state["df_label_min_dt"]
+    max_date = st.session_state["df_label_max_dt"]
 
     if "start_date" not in st.session_state:
         st.session_state.start_date = min_date
