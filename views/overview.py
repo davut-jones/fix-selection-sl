@@ -4,6 +4,7 @@ import altair as alt
 
 def render_view(df_filtered):
 
+    # page text
     st.write("\n\n")
     st.write("High-level summaries of call issues, outcomes, and key metrics to understand the landscape.")
     st.divider()

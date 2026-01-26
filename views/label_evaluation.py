@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-
 def render_view(df_filtered):
 
     # work on a copy to avoid mutating the original dataframe
@@ -157,7 +156,7 @@ def render_view(df_filtered):
     # mapping dictionary
     eng_to_llm_map = {
         "TT Broadband - No Sync": "Wi-Fi Status",
-        "TT Broadband -  Connection Dropping out": "Unreliable Wi-Fi",  # has extra space
+        "TT Broadband -  Connection Dropping out": "Unreliable Wi-Fi",  # has extra space
         "TT Broadband - Slow Speed": "Slow Wi-Fi",
     }
 
