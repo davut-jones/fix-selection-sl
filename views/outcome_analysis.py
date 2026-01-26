@@ -48,7 +48,7 @@ def render_view(df_filtered):
 
     # single table view
     if view_mode == "Single table":
-        st.dataframe(df_grouped, use_container_width=True)
+        st.dataframe(df_grouped, width='stretch')
 
     # expandable per label view
     else:
@@ -56,7 +56,7 @@ def render_view(df_filtered):
         for label in labels:
             with st.expander(label):
                 df_label_group = df_grouped[df_grouped["Call issue label"] == label]
-                st.dataframe(df_label_group, use_container_width=True)
+                st.dataframe(df_label_group, width='stretch')
 
     # remaining rows after filtering
     st.caption(f"{len(df_filtered):,} rows remaining after filtering")
