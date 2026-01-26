@@ -6,6 +6,7 @@
 import streamlit as st
 from streamlit_option_menu import option_menu  # type: ignore
 import pandas as pd
+import altair as alt
 
 # customer streamlit views
 from views.background import render_view as render_background
@@ -41,7 +42,7 @@ st.markdown(
 @st.cache_data
 def load_label_data():
     df = pd.read_csv(
-        "data/aug_nox_50k_calls_all_data.csv",
+        "data/aug_nov_50k_calls_all_data_v2.csv",
         dtype={
             "other_label": "string"
         }
@@ -56,6 +57,9 @@ df_label = load_label_data()
 st.session_state["df_label_total_rows"] = len(df_label)
 st.session_state["df_label_min_dt"] = df_label["call_date"].min()
 st.session_state["df_label_max_dt"] = df_label["call_date"].max()
+
+# set distinct outcomes
+st.session_state["global_outcomes"] = df_label["selected_outcome_cleaned"].dropna().unique()
 
 ######################
 ### authentication ###
