@@ -46,7 +46,10 @@ def load_label_data():
     df = pd.read_csv(
         "data/aug_nov_50k_calls_all_data_v2.csv",
         dtype={
-            "other_label": "string"
+            "other_label": "string",
+            "engineer_reported_cause": "string",
+            "engineer_reported_symptom": "string",
+            "engineer_reported_action": "string"
         }
     )
     df["call_date"] = pd.to_datetime(df["call_date"]).dt.date
