@@ -6,7 +6,10 @@ def render_view(df_filtered):
 
     # page text
     st.write("\n\n")
-    st.write("High-level summaries of call issues, outcomes, and key metrics to understand the landscape.")
+    st.markdown(
+    '<span style="font-size: 1.1rem; font-weight: 400;">High-level summaries of call issues, outcomes, and key metrics to understand the landscape</span>',
+    unsafe_allow_html=True
+    )
     st.divider()
 
     # ensure numeric types for calculations
@@ -39,7 +42,11 @@ def render_view(df_filtered):
 
     st.divider()
 
-    # label summary table
+
+    #######################################
+    ### section 1 - label summary table ###
+    #######################################
+
     st.subheader("Label Summary")
     st.write("\n\n\n\n")
 
@@ -90,7 +97,7 @@ def render_view(df_filtered):
 
     show_label_chart = st.checkbox(
         "Show label distribution chart",
-        value=False
+        value=True
     )
 
     if show_label_chart:
@@ -135,7 +142,11 @@ def render_view(df_filtered):
 
     st.divider()
 
-    # outcome summary table
+
+    #########################################
+    ### section 2 - outcome summary table ###
+    #########################################
+
     st.subheader("Outcome Summary")
     st.write("\n\n\n\n")
 
@@ -186,7 +197,7 @@ def render_view(df_filtered):
 
     show_outcome_chart = st.checkbox(
         "Show outcome distribution chart",
-        value=False
+        value=True
     )
 
     if show_outcome_chart:
@@ -227,6 +238,5 @@ def render_view(df_filtered):
         )
 
         st.altair_chart(chart, width='stretch')
-
 
     st.divider()

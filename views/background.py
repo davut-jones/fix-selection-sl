@@ -12,14 +12,14 @@ def render_view(df_filtered):
         f"""
         This dashboard provides background context and guidance for Data Science work into **Service Checker Call Label Modelling**.
 
-        **{vol_formatted} Service Checker calls** between **{start_month_year}** and **{end_month_year}** have been processed using
-        a **large language model (LLM)** to assign **call issue labels** aligned to the **IHH MOTs**. These labels represent the 
-        underlying issues a customer may face, and therefore contact us due to Wi-Fi and Broadband-related issues.
+        **{vol_formatted} Service Checker Hub 4 calls** between **{start_month_year}** and **{end_month_year}** have been processed using
+        a **large language model (LLM)** to assign **call issue labels** aligned to the **Service Checker IHH MOTs**. These labels represent the 
+        underlying issues a customer may face, and therefore contact us due to **Wi-Fi-related issues**.
 
         The purpose of this dashboard is to achieve 2 key objectives:
         - **Evaluate the quality and reliability of the LLM-derived labels**, and  
         - **Understand which customer outcomes should be offered** when a given issue is identified, based on
-          operational KPIs such as churn, repeat calls, and net change in £
+          operational KPIs such as **churn**, **repeat calls**, and **net change in £**
 
         Once we have confidence in **1. the call issue labels** and **2. the best outcomes to offer**, we can predict which customers are most likley to
         face these issues using **machine learning (ML) models**. A POC has already been completed to evaluate the possibility of these models. This
@@ -29,7 +29,11 @@ def render_view(df_filtered):
 
     st.divider()
 
-    # --- 2x2 grid cards ---
+
+    ######################
+    ### 2x2 grid cards ###
+    ######################
+
     col1, col2 = st.columns(2)
 
     with col1:

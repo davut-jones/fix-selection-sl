@@ -6,6 +6,14 @@ from utils.colours import build_global_color_scale
 
 def render_view(df_filtered):
 
+    # page text
+    st.write("\n\n")
+    st.markdown(
+    '<span style="font-size: 1.1rem; font-weight: 400;">For each call issue label evaluate selected outcome performance via repeat calls and churn</span>',
+    unsafe_allow_html=True
+    )
+    st.divider()
+
     # fixed colour palette
     all_outcomes = st.session_state["global_outcomes"]
     color_scale = build_global_color_scale(all_outcomes)
@@ -16,11 +24,6 @@ def render_view(df_filtered):
     if "view_mode" not in st.session_state:
         st.session_state.view_mode = "Single table"
 
-    # page text
-    st.write("\n\n")
-    st.write("For each call issue label evaluate selected outcome performance via repeat calls and churn")
-    st.divider()
-
     # ensure numeric types for calculations
     df_working = df_filtered.copy()
     df_working["outcome_cost"] = pd.to_numeric(df_working["outcome_cost"], errors="coerce")
@@ -28,16 +31,14 @@ def render_view(df_filtered):
     df_working["bb_churn_next_30d"] = pd.to_numeric(df_working["bb_churn_next_30d"], errors="coerce")
     df_working["bb_churn_next_60d"] = pd.to_numeric(df_working["bb_churn_next_60d"], errors="coerce")
 
-    ######################################
-    ### Chart 1 - Outcome Distribution ###
-    ######################################
+    ########################################
+    ### Section 1 - Outcome Distribution ###
+    ########################################
 
     st.subheader("Outcome Distribution by Label")
 
     # info box for chart
-    st.info(
-        "Each bar totals 100% after filtering and shows the outcome mix within each label."
-    )
+    st.info("Each bar totals 100% after filtering and shows the outcome mix within each label for those selected.")
 
     # aggregate for label and selected_outcome view
     df_grouped = (
@@ -96,6 +97,9 @@ def render_view(df_filtered):
 
     st.altair_chart(chart, use_container_width=True)
 
+    # remaining rows after filtering
+    st.caption(f"{chart_df.volume.sum():,} calls remaining after global filters applied")
+
     st.divider()
 
 
@@ -106,9 +110,7 @@ def render_view(df_filtered):
     st.subheader("Outcome Breakdown Table")
 
     # info box for table
-    st.info(
-        "This table shows the outcome mix for each label, along with repeat call and churn performance."
-    )
+    st.info("This table shows the outcome mix for each label, along with repeat call and churn performance.")
 
     # calculate rates (keep only rates, remove raw sums)
     df_grouped["repeat_rate_7d"] = df_grouped["repeat_rate_7d"]
@@ -162,7 +164,7 @@ def render_view(df_filtered):
                 st.dataframe(df_label_group, width='stretch')
 
     # remaining rows after filtering
-    st.caption(f"{len(df_working):,} rows remaining after filtering")
+    st.caption(f"{df_grouped['Volume'].sum():,} calls remaining after global filters applied")
 
     st.divider()
 
@@ -174,9 +176,7 @@ def render_view(df_filtered):
     st.subheader("Risk Tiering by Outcome")
 
     # info box for risk tiering
-    st.info(
-        "Assign importance sliders to the KPIs below. The system calculates a percentile-based risk score per outcome and groups them into Low, Medium and High risk tiers."
-    )
+    st.info("Assign importance sliders to the KPIs below. The system calculates a percentile-based risk score per outcome and groups them into Low, Medium and High risk tiers.")
 
     # KPI importance sliders (0–100)
     col1, col2, col3 = st.columns(3)
@@ -210,9 +210,7 @@ def render_view(df_filtered):
 
     # warning if weights don't add to 100
     if weight_repeat + weight_churn + weight_cost != 100:
-        st.warning(
-            "Weights do not add up to 100. They will be normalised automatically, but please adjust if you want the exact proportions."
-        )
+        st.warning("Weights do not add up to 100. They will be normalised automatically, but please adjust if you want the exact proportions.")
 
     # risk tier thresholds
     t_col1, t_col2 = st.columns(2)

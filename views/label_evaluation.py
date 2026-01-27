@@ -4,24 +4,24 @@ import altair as alt
 
 def render_view(df_filtered):
 
-    # work on a copy to avoid mutating the original dataframe
-    df_working = df_filtered.copy()
-
     # page text
     st.write("\n\n")
-    st.write(
-        "Evaluate the accuracy of LLM-generated labels by comparing them against "
-        "the last CSG call reason."
+    st.markdown(
+    '<span style="font-size: 1.1rem; font-weight: 400;">Evaluate the accuracy of LLM-generated labels by comparing them against Enginner notes and CSG call reasons</span>',
+    unsafe_allow_html=True
     )
     st.divider()
 
+    # work on a copy to avoid mutating the original dataframe
+    df_working = df_filtered.copy()
+
 
     ##############################################
-    ### chart 1 - Engineer reasons per label ###
+    ### section 1 - engineer reasons per label ###
     ##############################################
 
     st.subheader("Engineer Reported Reasons by Label")
-    st.warning("Only calls that end in an engineer visit are included. Distributions are for calls with both values.")
+    st.warning("Only calls that end in a BBTTE visit have engineer notes. Distributions are for calls with both values. Mapping below.")
     st.write("\n\n")
 
     # top x filter
@@ -29,7 +29,7 @@ def render_view(df_filtered):
     with filter_col:
         # top X slider
         top_x = st.slider(
-            "Top X engineer reported reasons:",
+            "Show top X engineer reported reasons for each label:",
             min_value=1,
             max_value=len(df_working['engineer_reported_symptom'].dropna().value_counts()),
             value=5,
@@ -128,18 +128,19 @@ def render_view(df_filtered):
     )
 
     st.altair_chart(eng_reason_chart, use_container_width=True)
+
+    # remaining rows after filtering
+    st.caption(f"{eng_label_totals.total_calls.sum():,} or {round(eng_label_totals.total_calls.sum() / len(df_filtered) * 100, 1)}% calls with a BTTEE visit and engineer note  after global filters applied")
+
     st.divider()
 
 
-    ###############################################
-    ### chart 2 - Engineer reason alignment ###
-    ###############################################
+    #############################################
+    ### section 2 - engineer reason alignment ###
+    #############################################
 
     st.subheader("Engineer Reported Reason Alignment by Label")
-
-    st.info(
-        "Alignment is calculated only for calls with a mapped engineer reported reason."
-    )
+    st.warning("Alignment is calculated only for calls with a mapped engineer reported reason. Mapping below.")
 
     # confidence filter
     # filter_col, _ = st.columns([3, 7])
@@ -212,7 +213,7 @@ def render_view(df_filtered):
                 alt.Tooltip("label:N", title="Label"),
                 alt.Tooltip("label_reason_count:Q", title="Calls with Engineer Reason"),
                 alt.Tooltip("match_count:Q", title="Mapped Calls"),
-                alt.Tooltip("alignment_pct:Q", title="Alignment", format=".1f")
+                alt.Tooltip("alignment_pct:Q", title="Alignment %", format=".1f")
             ]
         )
         .properties(height=45 * len(alignment_df))
@@ -230,9 +231,9 @@ def render_view(df_filtered):
     st.divider()
 
 
-    #######################################
-    ### chart 3 - CSG reasons per label ###
-    #######################################
+    #########################################
+    ### section 3 - csg reasons per label ###
+    #########################################
 
     st.subheader("CSG Call Reasons by Label")
     st.warning("Not all calls have a CSG reason. Distributions are for calls with both values.")
@@ -339,18 +340,20 @@ def render_view(df_filtered):
     )
 
     st.altair_chart(reason_chart, use_container_width=True)
+
+    # remaining rows after filtering
+    st.caption(f"{label_totals.total_calls.sum():,} or {round(label_totals.total_calls.sum() / len(df_filtered) * 100, 1)}% calls with a CSG call reason after global filters applied")
+
     st.divider()
 
 
-    ######################################
-    ### chart 4 - CSG reason alignment ###
-    ######################################
+    ########################################
+    ### section 4 - csg reason alignment ###
+    ########################################
 
     st.subheader("CSG Call Reason Alignment by Label")
 
-    st.info(
-        "Alignment is calculated only for calls with a mapped CSG call reason."
-    )
+    st.warning("Alignment is calculated only for calls with a mapped CSG call reason.")
 
     # confidence filter
     # filter_col, _ = st.columns([3, 7])
@@ -422,7 +425,7 @@ def render_view(df_filtered):
                 alt.Tooltip("label:N", title="Label"),
                 alt.Tooltip("label_reason_count:Q", title="Calls with CSG Reason"),
                 alt.Tooltip("match_count:Q", title="Mapped Calls"),
-                alt.Tooltip("alignment_pct:Q", title="Alignment", format=".1f")
+                alt.Tooltip("alignment_pct:Q", title="Alignment %", format=".1f")
             ]
         )
         .properties(height=45 * len(alignment_df))
@@ -440,9 +443,9 @@ def render_view(df_filtered):
     st.divider()
 
 
-    ################################
-    ### chart 5 - llm confidence ###
-    ################################
+    ##################################
+    ### section 5 - llm confidence ###
+    ##################################
 
     # ensure numeric types
     df_working["confidence"] = pd.to_numeric(df_working["confidence"], errors="coerce")
@@ -475,7 +478,11 @@ def render_view(df_filtered):
         )
     )
 
-    st.subheader("LLM-derived Confidence Score (1–10)")
-    st.warning("LLMs are naturally overconfident - use with caution.")
+    st.subheader("LLM-derived Confidence Score Distribution (1–10)")
+    st.warning("LLMs are naturally overconfident. Use with caution.")
     st.altair_chart(conf_chart, use_container_width=True)
+
+    # remaining rows after filtering
+    st.caption(f"{sum(conf_dist['count']):,} or {round(sum(conf_dist['count']) / len(df_filtered) * 100, 1)}% calls with a confidence score after global filters applied")
+
     st.divider()
