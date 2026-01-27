@@ -21,6 +21,7 @@ def render_view(df_filtered):
     ##############################################
 
     st.subheader("Engineer Reported Reasons by Label")
+    st.write("\n\n")
     st.warning("Only calls that end in a BBTTE visit have engineer notes. Distributions are for calls with both values. Mapping below.")
     st.write("\n\n")
 
@@ -140,7 +141,9 @@ def render_view(df_filtered):
     #############################################
 
     st.subheader("Engineer Reported Reason Alignment by Label")
+    st.write("\n\n")
     st.warning("Alignment is calculated only for calls with a mapped engineer reported reason. Mapping below.")
+    st.write("\n\n")
 
     # confidence filter
     # filter_col, _ = st.columns([3, 7])
@@ -236,6 +239,7 @@ def render_view(df_filtered):
     #########################################
 
     st.subheader("CSG Call Reasons by Label")
+    st.write("\n\n")
     st.warning("Not all calls have a CSG reason. Distributions are for calls with both values.")
     st.write("\n\n")
 
@@ -353,7 +357,9 @@ def render_view(df_filtered):
 
     st.subheader("CSG Call Reason Alignment by Label")
 
+    st.write("\n\n")
     st.warning("Alignment is calculated only for calls with a mapped CSG call reason.")
+    st.write("\n\n")
 
     # confidence filter
     # filter_col, _ = st.columns([3, 7])
@@ -479,7 +485,9 @@ def render_view(df_filtered):
     )
 
     st.subheader("LLM-derived Confidence Score Distribution (1–10)")
+    st.write("\n\n")
     st.warning("LLMs are naturally overconfident. Use with caution.")
+    st.write("\n\n")
     st.altair_chart(conf_chart, use_container_width=True)
 
     # remaining rows after filtering
