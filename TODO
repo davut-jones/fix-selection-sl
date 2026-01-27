@@ -1,0 +1,30 @@
+# TODO - Service Checker Call Label Modelling Dashboard
+
+## Completed ✓
+- [x] Raw data view with search and filtering
+- [x] Column naming and formatting across views
+- [x] 3-column filter layout in raw data view
+- [x] Text wrapping for long content (Reason, Evidence)
+- [x] Navigation menu with all 5 views
+- [x] Global filters (labels, outcomes, date range)
+- [x] Background, Overview, Label Evaluation, Outcome Analysis views
+
+## In Progress
+- [ ] Fix sorting in dataframes
+- [ ] Axis titles too big on outcome analysis plots - not showing all of them
+- [ ] Add use case prompts/examples on how to use the dashboard
+- [ ] Center metrics styling in overview view
+
+## Backlog
+- [ ] Review data and metrics - verify churn definitions, call definitions
+- [ ] Stress test filters with large datasets
+- [ ] Add fixed states using URL parameters
+- [ ] Review "Repeat call rate" vs "Repeat call" terminology
+- [ ] Consider changing 'Volume' label to 'Calls' for clarity
+- [ ] Password protection setup (AUTH_ENABLED)
+- [ ] Streamlit Cloud deployment configuration
+
+## Notes
+- Primary brand color: #5A67D8
+- Dashboard built with Streamlit, Pandas, Altair
+- Data source: 50k+ Service Checker Hub 4 calls (Aug-Nov)
