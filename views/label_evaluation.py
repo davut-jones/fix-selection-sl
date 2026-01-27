@@ -128,7 +128,7 @@ def render_view(df_filtered):
         .properties(height=350)
     )
 
-    st.altair_chart(eng_reason_chart, use_container_width=True)
+    st.altair_chart(eng_reason_chart, width='stretch')
 
     # remaining rows after filtering
     st.caption(f"{eng_label_totals.total_calls.sum():,} or {round(eng_label_totals.total_calls.sum() / len(df_filtered) * 100, 1)}% calls with a BTTEE visit and engineer note  after global filters applied")
@@ -222,7 +222,7 @@ def render_view(df_filtered):
         .properties(height=45 * len(alignment_df))
     )
 
-    st.altair_chart(alignment_chart, use_container_width=True)
+    st.altair_chart(alignment_chart, width='stretch')
 
     with st.expander("Label to Engineer Reported Reason mapping"):
         label_to_eng_map = pd.DataFrame(
@@ -343,7 +343,7 @@ def render_view(df_filtered):
         .properties(height=350)
     )
 
-    st.altair_chart(reason_chart, use_container_width=True)
+    st.altair_chart(reason_chart, width='stretch')
 
     # remaining rows after filtering
     st.caption(f"{label_totals.total_calls.sum():,} or {round(label_totals.total_calls.sum() / len(df_filtered) * 100, 1)}% calls with a CSG call reason after global filters applied")
@@ -437,7 +437,7 @@ def render_view(df_filtered):
         .properties(height=45 * len(alignment_df))
     )
 
-    st.altair_chart(alignment_chart, use_container_width=True)
+    st.altair_chart(alignment_chart, width='stretch')
 
     with st.expander("Label to CSG Call Reason mapping"):
         label_to_csg_map = pd.DataFrame(
@@ -466,7 +466,7 @@ def render_view(df_filtered):
     )
 
     conf_dist = (
-        df_working.groupby("confidence_bin")
+        df_working.groupby("confidence_bin", observed=True)
         .size()
         .reset_index(name="count")
     )
@@ -488,7 +488,7 @@ def render_view(df_filtered):
     st.write("\n\n")
     st.warning("LLMs are naturally overconfident. Use with caution.")
     st.write("\n\n")
-    st.altair_chart(conf_chart, use_container_width=True)
+    st.altair_chart(conf_chart, width='stretch')
 
     # remaining rows after filtering
     st.caption(f"{sum(conf_dist['count']):,} or {round(sum(conf_dist['count']) / len(df_filtered) * 100, 1)}% calls with a confidence score after global filters applied")

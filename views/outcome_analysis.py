@@ -3,7 +3,6 @@ import pandas as pd
 import altair as alt
 from utils.colours import build_global_color_scale
 
-
 def render_view(df_filtered):
 
     # page text
@@ -106,7 +105,7 @@ def render_view(df_filtered):
         .properties(height=45 * len(chart_df["label"].unique()))
     )
 
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width='stretch')
 
     # remaining rows after filtering
     st.caption(f"{chart_df.volume.sum():,} calls remaining after global filters applied")
@@ -388,7 +387,7 @@ def render_view(df_filtered):
             .properties(height=height_single)
         )
 
-        st.altair_chart(risk_chart_single, use_container_width=True)
+        st.altair_chart(risk_chart_single, width='stretch')
 
     ### all labels view ###
 
@@ -422,6 +421,6 @@ def render_view(df_filtered):
             .properties(height=45 * len(label_order))
         )
 
-        st.altair_chart(risk_chart_full, use_container_width=True)
+        st.altair_chart(risk_chart_full, width='stretch')
 
     st.divider()
