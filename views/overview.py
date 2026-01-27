@@ -35,11 +35,20 @@ def render_view(df_filtered):
     st.write("\n\n")
 
     # kpi cards
+    def custom_metric(col, label, value):
+        with col:
+            st.markdown(f"""
+            <div style='text-align: center; padding: 10px;'>
+                <div style='font-size: 14px; color: #666;'>{label}</div>
+                <div style='font-size: 28px; font-weight: bold; color: #5A67D8;'>{value}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Calls", f"{total_filtered_calls:,}")
-    col2.metric("Repeat Call Rate (7d)", f"{repeat_rate:.1%}")
-    col3.metric("Churn Rate (30d)", f"{churn_rate_30:.1%}")
-    col4.metric("Avg. Outcome Cost (£)", f"£{avg_outcome_cost:,.0f}")
+    custom_metric(col1, "Total Calls", f"{total_filtered_calls:,}")
+    custom_metric(col2, "Repeat Call Rate (7d)", f"{repeat_rate:.1%}")
+    custom_metric(col3, "Churn Rate (30d)", f"{churn_rate_30:.1%}")
+    custom_metric(col4, "Avg. Outcome Cost (£)", f"£{avg_outcome_cost:,.0f}")
 
     st.divider()
 
