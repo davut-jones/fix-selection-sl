@@ -15,6 +15,7 @@ from views.label_evaluation import render_view as render_label_evaluation
 from views.outcome_analysis import render_view as render_outcome_analysis
 from views.raw_data import render_view as render_raw_data
 
+
 ###################
 ### page config ###
 ###################
@@ -33,6 +34,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 ###########################
 ### load and cache data ###
@@ -60,6 +62,7 @@ st.session_state["df_label_max_dt"] = df_label["call_date"].max()
 
 # set distinct outcomes
 st.session_state["global_outcomes"] = df_label["selected_outcome_cleaned"].dropna().unique()
+
 
 ######################
 ### authentication ###
@@ -98,6 +101,7 @@ else:
 
 # only view if authenticated
 if st.session_state.authenticated:
+
 
     #################################
     ### navigation and main view ####
