@@ -7,7 +7,7 @@ def render_view(df_filtered):
     start_month_year = pd.to_datetime(st.session_state["df_label_min_dt"]).strftime("%b %y")
     end_month_year = pd.to_datetime(st.session_state["df_label_max_dt"]).strftime("%b %y")
 
-    st.write("\n\n\n\n")
+    st.write("\n\n")
     st.write(
         f"""
         This dashboard provides background context and guidance for Data Science work into **Service Checker Call Label Modelling**.
@@ -45,7 +45,9 @@ def render_view(df_filtered):
             """,
             unsafe_allow_html=True
         )
+        st.write("\n\n")
         st.subheader("Overview")
+        st.write("\n\n")
         st.write(
             "High-level summaries of call issues, outcomes, and key metrics to understand the landscape"
         )
@@ -57,6 +59,7 @@ def render_view(df_filtered):
                 deeper analysis.
                 """
             )
+        st.write("\n\n")
 
     with col2:
         st.markdown(
@@ -67,7 +70,9 @@ def render_view(df_filtered):
             """,
             unsafe_allow_html=True
         )
+        st.write("\n\n")
         st.subheader("Label Evaluation")
+        st.write("\n\n")
         st.write(
             "Assess how well LLM-generated call labels reflect real customer issues"
         )
@@ -82,8 +87,8 @@ def render_view(df_filtered):
                 labelling approach.
                 """
             )
+        st.write("\n\n")
 
-    st.write("")  # spacing
 
     col3, col4 = st.columns(2)
 
@@ -96,7 +101,9 @@ def render_view(df_filtered):
             """,
             unsafe_allow_html=True
         )
+        st.write("\n\n")
         st.subheader("Outcome Analysis")
+        st.write("\n\n")
         st.write(
             "Explore which outcomes should be offered for each call issue label"
         )
@@ -112,6 +119,7 @@ def render_view(df_filtered):
                 - **High risk** – escalation to Tier 2 advisors
                 """
             )
+        st.write("\n\n")
 
     with col4:
         st.markdown(
@@ -122,7 +130,9 @@ def render_view(df_filtered):
             """,
             unsafe_allow_html=True
         )
+        st.write("\n\n")
         st.subheader("Raw Label Data")
+        st.write("\n\n")
         st.write(
             "Access the underlying labelled dataset for detailed inspection and validation"
         )
@@ -138,3 +148,4 @@ def render_view(df_filtered):
                 It enables manual spot-checking and deeper investigation where required.
                 """
             )
+        st.write("\n\n")

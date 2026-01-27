@@ -30,8 +30,9 @@ def render_view(df_filtered):
     avg_outcome_cost = df_filtered["outcome_cost"].mean()
 
     # page text
+    st.write("\n\n")
     st.subheader("All Calls")
-    st.write("\n\n\n\n")
+    st.write("\n\n")
 
     # kpi cards
     col1, col2, col3, col4 = st.columns(4)
@@ -47,8 +48,9 @@ def render_view(df_filtered):
     ### section 1 - label summary table ###
     #######################################
 
+    st.write("\n\n")
     st.subheader("Label Summary")
-    st.write("\n\n\n\n")
+    st.write("\n\n")
 
     df_label_summary = (
         df_filtered.groupby("label")
@@ -147,8 +149,9 @@ def render_view(df_filtered):
     ### section 2 - outcome summary table ###
     #########################################
 
+    st.write("\n\n")
     st.subheader("Outcome Summary")
-    st.write("\n\n\n\n")
+    st.write("\n\n")
 
     df_outcome_summary = (
         df_filtered.groupby("selected_outcome_cleaned")

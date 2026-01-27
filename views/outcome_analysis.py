@@ -18,9 +18,7 @@ def render_view(df_filtered):
     all_outcomes = st.session_state["global_outcomes"]
     color_scale = build_global_color_scale(all_outcomes)
 
-    color = alt.Color("Selected outcome:N", scale=color_scale)
-
-    # Persist view mode across reruns
+    # persist view mode across reruns
     if "view_mode" not in st.session_state:
         st.session_state.view_mode = "Single table"
 
@@ -39,7 +37,9 @@ def render_view(df_filtered):
     st.subheader("Outcome Distribution by Label")
 
     # info box for chart
+    st.write("\n\n")
     st.info("Each bar totals 100% after filtering and shows the outcome mix within each label for those selected.")
+    st.write("\n\n")
 
     # aggregate for label and selected_outcome view
     df_grouped = (
@@ -121,7 +121,9 @@ def render_view(df_filtered):
     st.subheader("Outcome Breakdown Table")
 
     # info box for table
+    st.write("\n\n")
     st.info("This table shows the outcome mix for each label, along with repeat call and churn performance.")
+    st.write("\n\n")
 
     # calculate rates (keep only rates, remove raw sums)
     df_grouped["repeat_rate_7d"] = df_grouped["repeat_rate_7d"]
@@ -187,22 +189,38 @@ def render_view(df_filtered):
     st.subheader("Risk Tiering by Outcome")
 
     # info box for risk tiering
+    st.write("\n\n")
     st.info(
-        "Assign importance weight to the KPIs below using the sliders. "
-        "The system calculates a percentile-based risk score per outcome and groups "
-        "them into **Low**, **Medium** and **High** risk tiers. "
+        "Assign importance weights to the KPIs below. "
+        "Percentile-based risk score per outcome grouped "
+        "into **Low**, **Medium** and **High** risk tiers. "
         "0% represents the lowest risk outcome and 100% the highest risk outcome."
     )
+    st.write("\n\n")
 
+    # ---------------------------
+    # Reset callbacks
+    # ---------------------------
+    def reset_weights():
+        st.session_state.weight_repeat = 33
+        st.session_state.weight_churn = 33
+        st.session_state.weight_cost = 34
+
+    def reset_boundaries():
+        st.session_state.low_threshold = 0.33
+        st.session_state.med_threshold = 0.66
+
+    # ---------------------------
     # KPI importance sliders (0–100)
-    col1, col2, col3 = st.columns(3)
+    # ---------------------------
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 0.5])
 
     with col1:
         weight_repeat = st.slider(
             "Repeat call rate (7d) importance:",
             min_value=0,
             max_value=100,
-            value=33,
+            value=st.session_state.get("weight_repeat", 33),
             key="weight_repeat"
         )
 
@@ -211,7 +229,7 @@ def render_view(df_filtered):
             "Churn rate (30d) importance:",
             min_value=0,
             max_value=100,
-            value=33,
+            value=st.session_state.get("weight_churn", 33),
             key="weight_churn"
         )
 
@@ -220,9 +238,12 @@ def render_view(df_filtered):
             "Outcome cost importance:",
             min_value=0,
             max_value=100,
-            value=34,
+            value=st.session_state.get("weight_cost", 34),
             key="weight_cost"
         )
+
+    with col4:
+        st.button("Reset weights", on_click=reset_weights)
 
     # warning if weights don't add to 100
     if weight_repeat + weight_churn + weight_cost != 100:
@@ -231,15 +252,17 @@ def render_view(df_filtered):
             "but please adjust if you want the exact proportions."
         )
 
+    # ---------------------------
     # risk tier thresholds
-    t_col1, t_col2 = st.columns(2)
+    # ---------------------------
+    t_col1, t_col2, t_col3 = st.columns([1, 1, 0.5])
 
     with t_col1:
         low_threshold = st.slider(
             "Low - medium boundary:",
             min_value=0.0,
             max_value=1.0,
-            value=0.33,
+            value=st.session_state.get("low_threshold", 0.33),
             step=0.01,
             key="low_threshold"
         )
@@ -249,12 +272,16 @@ def render_view(df_filtered):
             "Medium - high boundary:",
             min_value=0.0,
             max_value=1.0,
-            value=0.66,
+            value=st.session_state.get("med_threshold", 0.66),
             step=0.01,
             key="med_threshold"
         )
 
+    with t_col3:
+        st.button("Reset boundaries", on_click=reset_boundaries)
+
     st.write("\n\n")
+
 
     # normalise weights to sum to 1
     weight_sum = weight_repeat + weight_churn + weight_cost
@@ -317,11 +344,15 @@ def render_view(df_filtered):
     )
 
     ### single label view ###
+
     if view_toggle == "Single label":
 
+        single_labels = [lbl for lbl in label_order if lbl in risk_df["Call issue label"].unique()]
+        default_label = "Wi-Fi Status"
         selected_label = st.selectbox(
             "Choose label:",
-            options=sorted(risk_df["Call issue label"].unique()),
+            options=single_labels,
+            index=single_labels.index(default_label) if default_label in single_labels else 0,
             key="risk_label_select"
         )
 
@@ -360,6 +391,7 @@ def render_view(df_filtered):
         st.altair_chart(risk_chart_single, use_container_width=True)
 
     ### all labels view ###
+
     else:
 
         risk_chart_full = (
