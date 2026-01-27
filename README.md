@@ -1,9 +1,22 @@
 # Service Checker Call Label Modelling
 
+A Streamlit analytics dashboard for exploring LLM-derived call issue labels and customer outcomes from 50k+ Service Checker Hub 4 calls.
+
+## Dashboard Views
+
+- **Background** - Project context and business rationale
+- **Overview** - High-level KPI summaries by label and outcome
+- **Label Evaluation** - Deep-dive into label quality metrics
+- **Outcome Analysis** - KPI comparison across outcomes with weighted scoring
+- **Raw Label Data** - Filtered raw data inspection and export
+
 ## First time setup
 
 ### 0 - clone repo
-git clone ...
+```bash
+git clone https://github.com/[your-username]/fix-selection-sl.git
+cd fix-selection-sl
+```
 
 ### 1 - activate venv
 python3 -m venv venv 
