@@ -8,12 +8,14 @@
 - [x] Navigation menu with all 5 views
 - [x] Global filters (labels, outcomes, date range)
 - [x] Background, Overview, Label Evaluation, Outcome Analysis views
+- [x] Center metrics styling in overview view
 
 ## In Progress
+- [ ] Test dashboard and build backlog of issues
 - [ ] Fix sorting in dataframes
-- [ ] Axis titles too big on outcome analysis plots - not showing all of them
+- [ ] Axis titles too big on outcome analysis plots, not showing all of them
 - [ ] Add use case prompts/examples on how to use the dashboard
-- [ ] Center metrics styling in overview view
+
 
 ## Backlog
 - [ ] Review data and metrics - verify churn definitions, call definitions
