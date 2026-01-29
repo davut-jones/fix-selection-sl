@@ -372,7 +372,7 @@ def render_view(df_filtered):
             else ".1%"
         )
 
-        # ---- line (monotone, thicker, darker) ----
+        # line
         line = (
             alt.Chart(df_agg)
             .mark_line(
@@ -394,7 +394,7 @@ def render_view(df_filtered):
             )
         )
 
-        # ---- solid points ----
+        # points
         points = (
             alt.Chart(df_agg)
             .mark_point(

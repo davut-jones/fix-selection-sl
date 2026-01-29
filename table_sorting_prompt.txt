@@ -1,0 +1,15 @@
+I want to display a Streamlit dataframe with numeric columns that need to be formatted for display (e.g., currency with £ or percentages), while still allowing proper numeric sorting.
+
+Please follow these rules:
+
+Keep all numeric columns numeric internally. Do not convert them to strings before sorting.
+
+Sort the dataframe on any numeric columns before applying formatting.
+
+Apply .style.format() only for visual display, e.g., showing £ symbols or converting 0/1 flags into "Yes"/"No".
+
+Use st.column_config.NumberColumn for numeric columns and st.column_config.TextColumn for text/flag columns.
+
+Ensure the displayed table is fully aligned with Streamlit styling, and numeric sorting works correctly (so values like 0, 10, 60, 100, 120 sort in natural numeric order).
+
+Give me a working render_view(df_filtered) function that applies these principles, including optional filters for text search and Yes/No flags.

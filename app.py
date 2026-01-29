@@ -4,9 +4,8 @@
 
 # standard python imports
 import streamlit as st
-from streamlit_option_menu import option_menu  # type: ignore
+from streamlit_option_menu import option_menu
 import pandas as pd
-import altair as alt
 
 # customer streamlit views
 from views.background import render_view as render_background
@@ -165,7 +164,7 @@ if st.session_state.authenticated:
                 st.session_state.start_date = min_date
                 st.session_state.end_date = max_date
 
-            # Date filters
+            # date filters
             st.date_input(
                 "Start of period:",
                 min_value=min_date,
