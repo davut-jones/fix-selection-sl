@@ -119,6 +119,7 @@ def render_view(df_filtered):
         value=False,
         key="label_metrics"
     )
+    st.write("\n\n")
 
     if show_label_metrics:
 
@@ -203,7 +204,7 @@ def render_view(df_filtered):
         line = (
             alt.Chart(df_agg)
             .mark_line(
-                strokeWidth=4,
+                strokeWidth=3,
                 color=line_color,
                 interpolate="monotone"
             )
@@ -233,7 +234,7 @@ def render_view(df_filtered):
             alt.Chart(df_agg)
             .mark_point(
                 filled=True,
-                size=70,
+                size=60,
                 color=point_color
             )
             .encode(
@@ -242,7 +243,9 @@ def render_view(df_filtered):
             )
         )
 
-        chart = (line + points).properties(height=300)
+        st.write("\n\n")
+        st.write("\n\n")
+        chart = (line + points).properties(height=200)
 
         st.altair_chart(chart, use_container_width=True)
 
@@ -304,6 +307,8 @@ def render_view(df_filtered):
 
     # metrics-over-time toggle for outcomes
     show_outcome_metrics = st.checkbox("Show outcome metrics over time", value=False, key="outcome_metrics")
+    st.write("\n\n")
+
     if show_outcome_metrics:
 
         # default metric: Calls, grain: weekly, split by outcome optional
@@ -376,7 +381,7 @@ def render_view(df_filtered):
         line = (
             alt.Chart(df_agg)
             .mark_line(
-                strokeWidth=4,
+                strokeWidth=3,
                 color=line_color,
                 interpolate="monotone"
             )
@@ -398,7 +403,7 @@ def render_view(df_filtered):
         points = (
             alt.Chart(df_agg)
             .mark_point(
-                size=70,
+                size=60,
                 color=line_color,
                 filled=True
             )
@@ -416,7 +421,9 @@ def render_view(df_filtered):
             )
         )
 
-        chart = (line + points).properties(height=300)
+        st.write("\n\n")
+        st.write("\n\n")
+        chart = (line + points).properties(height=200)
 
         st.altair_chart(chart, use_container_width=True)
 
