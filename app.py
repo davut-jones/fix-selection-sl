@@ -207,11 +207,12 @@ if st.session_state.authenticated:
         ]
 
     # dynamic title change for each view
-    st.title(
-        "Service Checker Call Label Modelling"
-        if selected_view == "Background"
-        else selected_view
-    )
+    if selected_view == "Background":
+        st.title(dash_name)
+        st.subheader("Data Science & Analtyics")
+        st.write("\n\n")
+    else:
+        st.title(selected_view)
 
     # view selection
     if selected_view == "Background":
