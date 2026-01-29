@@ -4,10 +4,7 @@ import altair as alt
 
 def render_view(df_filtered):
 
-    #########################
-    ### section 0 - page text ###
-    #########################
-
+    # page text
     st.write("\n\n")
     st.markdown(
         '<span style="font-size: 1.1rem; font-weight: 400;">High-level summaries of call issues, outcomes, and key metrics to understand the landscape</span>',
@@ -15,9 +12,9 @@ def render_view(df_filtered):
     )
     st.divider()
 
-    #########################
-    ### section 1 - KPI summary ###
-    #########################
+    ###############################
+    ### section 1 - kpi summary ###
+    ###############################
 
     # ensure numeric
     numeric_cols = ["outcome_cost", "sc_call_next_7d_flag", "bb_churn_next_30d", "bb_churn_next_60d"]
@@ -33,7 +30,7 @@ def render_view(df_filtered):
     churn_rate_30 = df_filtered["bb_churn_next_30d"].mean() if total_calls else 0
     avg_cost = df_filtered["outcome_cost"].mean()
 
-    # KPI cards
+    # kpi cards
     def metric_card_colorful(col, label, value, bg_color):
         with col:
             st.markdown(f"""
@@ -43,7 +40,7 @@ def render_view(df_filtered):
             </div>
             """, unsafe_allow_html=True)
 
-    # order: Calls (blue), Avg Cost (purple), Repeat (yellow), Churn (red)
+    # metric cards
     col1, col2, col3, col4 = st.columns(4)
     metric_card_colorful(col1, "Calls", f"{total_calls:,}", bg_color="#E0F2FE")  # blue
     metric_card_colorful(col2, "Avg Outcome Cost (£)", f"£{avg_cost:,.0f}", bg_color="#EDE9FE")  # purple
@@ -52,9 +49,9 @@ def render_view(df_filtered):
 
     st.divider()
 
-    #########################
+    #######################################
     ### section 2 - label summary table ###
-    #########################
+    #######################################
 
     st.subheader("Label Summary")
 
@@ -116,24 +113,32 @@ def render_view(df_filtered):
 
     st.caption(f"{chart_label_df.volume.sum():,} calls remaining after global filters applied")
 
-    # Metrics-over-time toggle
-    show_label_metrics = st.checkbox("Show label metrics over time", value=False, key="label_metrics")
+    # metrics-over-time toggle
+    show_label_metrics = st.checkbox(
+        "Show label metrics over time",
+        value=False,
+        key="label_metrics"
+    )
+
     if show_label_metrics:
 
         # selectors: metric, grain, split
         col_metric, col_grain, col_split = st.columns(3)
+
         metric_choice = col_metric.selectbox(
             "Metric:",
             ["Calls", "Avg Outcome Cost (£)", "Repeat Call Rate (7d)", "Churn Rate (30d)"],
             index=0,
             key="label_metric_choice"
         )
+
         grain_choice = col_grain.selectbox(
             "Time Grain:",
             ["Weekly", "Monthly"],
             index=0,
             key="label_grain_choice"
         )
+
         split_choice = col_split.selectbox(
             "Split by Label (optional):",
             ["None"],
@@ -144,65 +149,109 @@ def render_view(df_filtered):
         freq = "W" if grain_choice == "Weekly" else "M"
 
         df_time = df_filtered.copy()
-        df_time["period"] = df_time["call_date"].dt.to_period(freq).dt.start_time
+        df_time["period"] = (
+            df_time["call_date"]
+            .dt.to_period(freq)
+            .dt.start_time
+        )
 
+        # aggregation
+        df_agg = (
+            df_time.groupby("period")
+            .agg(
+                volume=("label", "size"),
+                avg_outcome_cost=("outcome_cost", "mean"),
+                call_rate_7d=("sc_call_next_7d_flag", "mean"),
+                churn_rate_30d=("bb_churn_next_30d", "mean"),
+            )
+            .reset_index()
+        )
+
+        df_agg["avg_outcome_cost"] = df_agg["avg_outcome_cost"].round(0)
+
+        # metric → column mapping
         y_col_map = {
             "Calls": "volume",
             "Avg Outcome Cost (£)": "avg_outcome_cost",
             "Repeat Call Rate (7d)": "call_rate_7d",
-            "Churn Rate (30d)": "churn_rate_30d"
+            "Churn Rate (30d)": "churn_rate_30d",
         }
 
-        # aggregate
-        df_agg = df_time.groupby("period").agg(
-            volume=("label", "size"),
-            avg_outcome_cost=("outcome_cost", "mean"),
-            call_rate_7d=("sc_call_next_7d_flag", "mean"),
-            churn_rate_30d=("bb_churn_next_30d", "mean"),
-        ).reset_index()
-        df_agg["avg_outcome_cost"] = df_agg["avg_outcome_cost"].round(0)
-
-        # assign colors (calls, avg, repeat, churn)
+        # colours aligned with KPI cards (order preserved)
         color_map = {
-            "Calls": "#1E40AF",  # blue
-            "Avg Outcome Cost (£)": "#6B21A8",  # purple
-            "Repeat Call Rate (7d)": "#D97706",  # yellow/orange
-            "Churn Rate (30d)": "#B91C1C"  # red
+            "Calls": "#1E40AF",                # blue
+            "Avg Outcome Cost (£)": "#6B21A8", # purple
+            "Repeat Call Rate (7d)": "#D97706",# yellow / amber
+            "Churn Rate (30d)": "#B91C1C",     # red
         }
 
         line_color = color_map[metric_choice]
+        point_color = color_map[metric_choice]
 
-        # plot line + points
-        line = alt.Chart(df_agg).mark_line(strokeWidth=4, color=line_color).encode(
-            x=alt.X("period:T", title="Period", axis=alt.Axis(format="%d %b")),
-            y=alt.Y(f"{y_col_map[metric_choice]}:Q",
-                    title=metric_choice,
-                    axis=alt.Axis(format=".0%" if "Rate" in metric_choice else "~s")),
-            tooltip=[
-                alt.Tooltip("period:T", title="Period"),
-                alt.Tooltip(f"{y_col_map[metric_choice]}:Q", title=metric_choice,
-                            format=",.0f" if "Outcome" in metric_choice or "Calls" in metric_choice else ".1%")
-            ]
+        # axis formatting
+        is_rate = "Rate" in metric_choice
+        y_axis = alt.Axis(
+            title=metric_choice,
+            format=".0%" if is_rate else "~s"
         )
 
-        points = alt.Chart(df_agg).mark_point(size=60, color=line_color).encode(
-            x="period:T",
-            y=f"{y_col_map[metric_choice]}:Q",
-            tooltip=[
-                alt.Tooltip("period:T", title="Period"),
-                alt.Tooltip(f"{y_col_map[metric_choice]}:Q", title=metric_choice,
-                            format=",.0f" if "Outcome" in metric_choice or "Calls" in metric_choice else ".1%")
-            ]
+        tooltip_format = (
+            ".1%" if is_rate else ",.0f"
         )
 
-        chart = line + points
-        st.altair_chart(chart, use_container_width=True, theme="streamlit", height=300)
+        # line
+        line = (
+            alt.Chart(df_agg)
+            .mark_line(
+                strokeWidth=4,
+                color=line_color,
+                interpolate="monotone"
+            )
+            .encode(
+                x=alt.X(
+                    "period:T",
+                    title=None,
+                    axis=alt.Axis(format="%d %b")
+                ),
+                y=alt.Y(
+                    f"{y_col_map[metric_choice]}:Q",
+                    axis=y_axis
+                ),
+                tooltip=[
+                    alt.Tooltip("period:T", title="Period"),
+                    alt.Tooltip(
+                        f"{y_col_map[metric_choice]}:Q",
+                        title=metric_choice,
+                        format=tooltip_format
+                    ),
+                ],
+            )
+        )
+
+        # solid points
+        points = (
+            alt.Chart(df_agg)
+            .mark_point(
+                filled=True,
+                size=70,
+                color=point_color
+            )
+            .encode(
+                x="period:T",
+                y=f"{y_col_map[metric_choice]}:Q",
+            )
+        )
+
+        chart = (line + points).properties(height=300)
+
+        st.altair_chart(chart, use_container_width=True)
 
     st.divider()
 
-    #########################
+
+    #########################################
     ### section 3 - outcome summary table ###
-    #########################
+    #########################################
 
     st.subheader("Outcome Summary")
 
@@ -253,9 +302,10 @@ def render_view(df_filtered):
 
     st.caption(f"{chart_outcome_df.volume.sum():,} calls remaining after global filters applied")
 
-    # Metrics-over-time toggle for outcomes
+    # metrics-over-time toggle for outcomes
     show_outcome_metrics = st.checkbox("Show outcome metrics over time", value=False, key="outcome_metrics")
     if show_outcome_metrics:
+
         # default metric: Calls, grain: weekly, split by outcome optional
         col_metric, col_grain, col_split = st.columns(3)
         metric_choice = col_metric.selectbox(
@@ -282,51 +332,92 @@ def render_view(df_filtered):
         df_time = df_filtered.copy()
         df_time["period"] = df_time["call_date"].dt.to_period(freq).dt.start_time
 
-        df_agg = df_time.groupby("period").agg(
-            volume=("selected_outcome_cleaned", "size"),
-            avg_outcome_cost=("outcome_cost", "mean"),
-            call_rate_7d=("sc_call_next_7d_flag", "mean"),
-            churn_rate_30d=("bb_churn_next_30d", "mean"),
-        ).reset_index()
+        df_agg = (
+            df_time.groupby("period")
+            .agg(
+                volume=("selected_outcome_cleaned", "size"),
+                avg_outcome_cost=("outcome_cost", "mean"),
+                call_rate_7d=("sc_call_next_7d_flag", "mean"),
+                churn_rate_30d=("bb_churn_next_30d", "mean"),
+            )
+            .reset_index()
+        )
+
         df_agg["avg_outcome_cost"] = df_agg["avg_outcome_cost"].round(0)
 
         y_col_map = {
             "Calls": "volume",
             "Avg Outcome Cost (£)": "avg_outcome_cost",
             "Repeat Call Rate (7d)": "call_rate_7d",
-            "Churn Rate (30d)": "churn_rate_30d"
+            "Churn Rate (30d)": "churn_rate_30d",
         }
+
         color_map = {
-            "Calls": "#1E40AF",  # blue
+            "Calls": "#1E40AF",              # blue
             "Avg Outcome Cost (£)": "#6B21A8",  # purple
-            "Repeat Call Rate (7d)": "#D97706",  # yellow/orange
-            "Churn Rate (30d)": "#B91C1C"  # red
+            "Repeat Call Rate (7d)": "#D97706", # yellow/orange
+            "Churn Rate (30d)": "#B91C1C",      # red
         }
+
         line_color = color_map[metric_choice]
 
-        line = alt.Chart(df_agg).mark_line(strokeWidth=4, color=line_color).encode(
-            x=alt.X("period:T", title="Period", axis=alt.Axis(format="%d %b")),
-            y=alt.Y(f"{y_col_map[metric_choice]}:Q",
-                    title=metric_choice,
-                    axis=alt.Axis(format=".0%" if "Rate" in metric_choice else "~s")),
-            tooltip=[
-                alt.Tooltip("period:T", title="Period"),
-                alt.Tooltip(f"{y_col_map[metric_choice]}:Q", title=metric_choice,
-                            format=",.0f" if "Outcome" in metric_choice or "Calls" in metric_choice else ".1%")
-            ]
+        y_axis = alt.Axis(
+            title=metric_choice,
+            format=".0%" if "Rate" in metric_choice else "~s"
         )
 
-        points = alt.Chart(df_agg).mark_point(size=60, color=line_color).encode(
-            x="period:T",
-            y=f"{y_col_map[metric_choice]}:Q",
-            tooltip=[
-                alt.Tooltip("period:T", title="Period"),
-                alt.Tooltip(f"{y_col_map[metric_choice]}:Q", title=metric_choice,
-                            format=",.0f" if "Outcome" in metric_choice or "Calls" in metric_choice else ".1%")
-            ]
+        tooltip_format = (
+            ",.0f"
+            if metric_choice in ["Calls", "Avg Outcome Cost (£)"]
+            else ".1%"
         )
 
-        chart = line + points
-        st.altair_chart(chart, use_container_width=True, theme="streamlit", height=300)
+        # ---- line (monotone, thicker, darker) ----
+        line = (
+            alt.Chart(df_agg)
+            .mark_line(
+                strokeWidth=4,
+                color=line_color,
+                interpolate="monotone"
+            )
+            .encode(
+                x=alt.X("period:T", title=None, axis=alt.Axis(format="%d %b")),
+                y=alt.Y(f"{y_col_map[metric_choice]}:Q", axis=y_axis),
+                tooltip=[
+                    alt.Tooltip("period:T", title="Period"),
+                    alt.Tooltip(
+                        f"{y_col_map[metric_choice]}:Q",
+                        title=metric_choice,
+                        format=tooltip_format,
+                    ),
+                ],
+            )
+        )
+
+        # ---- solid points ----
+        points = (
+            alt.Chart(df_agg)
+            .mark_point(
+                size=70,
+                color=line_color,
+                filled=True
+            )
+            .encode(
+                x="period:T",
+                y=f"{y_col_map[metric_choice]}:Q",
+                tooltip=[
+                    alt.Tooltip("period:T", title="Period"),
+                    alt.Tooltip(
+                        f"{y_col_map[metric_choice]}:Q",
+                        title=metric_choice,
+                        format=tooltip_format,
+                    ),
+                ],
+            )
+        )
+
+        chart = (line + points).properties(height=300)
+
+        st.altair_chart(chart, use_container_width=True)
 
     st.divider()

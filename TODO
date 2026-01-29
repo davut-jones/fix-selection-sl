@@ -11,10 +11,16 @@
 - [x] Center metrics styling in overview view
 
 ## In Progress
+- [ ] Restructure with sub menus
+- [ ] Fix filtering of tables on all other tabs
 - [ ] Test dashboard and build backlog of issues
 - [ ] Fix sorting in dataframes
 - [ ] Axis titles too big on outcome analysis plots, not showing all of them
 - [ ] Add use case prompts/examples on how to use the dashboard
+- [ ] Add split by label / outcome functionality in overview tab
+- [ ] Add misclassified labels for review and LLM improvement
+- [ ] Add model predictions, simple and data science version
+- [ ] Add slides from the deck, turn into PDF and add to the site?
 
 
 ## Backlog
