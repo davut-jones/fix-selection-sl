@@ -42,10 +42,10 @@ def render_view(df_filtered):
 
     # metric cards
     col1, col2, col3, col4 = st.columns(4)
-    metric_card_colorful(col1, "Calls", f"{total_calls:,}", bg_color="#E0F2FE")  # blue
-    metric_card_colorful(col2, "Avg Outcome Cost (£)", f"£{avg_cost:,.0f}", bg_color="#EDE9FE")  # purple
-    metric_card_colorful(col3, "Repeat Call Rate (7d)", f"{repeat_rate:.1%}", bg_color="#FEF3C7")  # yellow
-    metric_card_colorful(col4, "Churn Rate (30d)", f"{churn_rate_30:.1%}", bg_color="#FEE2E2")  # red
+    metric_card_colorful(col1, "Calls", f"{total_calls:,}", bg_color="#aec7e8")  # blue
+    metric_card_colorful(col2, "Avg Outcome Cost (£)", f"£{avg_cost:,.0f}", bg_color="#c5b0d5")  # purple
+    metric_card_colorful(col3, "Repeat Call Rate (7d)", f"{repeat_rate:.1%}", bg_color="#ffbb78")  # yellow
+    metric_card_colorful(col4, "Churn Rate (30d)", f"{churn_rate_30:.1%}", bg_color="#ff9896")  # red
 
     st.divider()
 

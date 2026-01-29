@@ -1,20 +1,20 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
+from utils.colours import build_global_color_scale
 
 def render_view(df_filtered):
 
     # page text
     st.write("\n\n")
     st.markdown(
-    '<span style="font-size: 1.1rem; font-weight: 400;">Evaluate the accuracy of LLM-generated labels by comparing them against Enginner notes and CSG call reasons</span>',
-    unsafe_allow_html=True
+        '<span style="font-size: 1.1rem; font-weight: 400;">Evaluate the accuracy of LLM-generated labels by comparing them against Enginner notes and CSG call reasons</span>',
+        unsafe_allow_html=True
     )
     st.divider()
 
     # work on a copy to avoid mutating the original dataframe
     df_working = df_filtered.copy()
-
 
     ##############################################
     ### section 1 - engineer reasons per label ###
@@ -28,7 +28,6 @@ def render_view(df_filtered):
     # top x filter
     filter_col, _ = st.columns([3, 7])
     with filter_col:
-        # top X slider
         top_x = st.slider(
             "Show top X engineer reported reasons for each label:",
             min_value=1,
@@ -49,31 +48,23 @@ def render_view(df_filtered):
         .reset_index(name="count")
     )
 
-    # totals for x-axis (only where reason exists)
+    # totals for x-axis
     eng_label_totals = (
         df_eng_reason.groupby("label")
         .size()
         .reset_index(name="total_calls")
     )
-
-    # add totals to labels
     eng_label_totals["label_with_total"] = (
         eng_label_totals["label"] + " (" + (eng_label_totals["total_calls"] / 1000).round(1).astype(str) + "k)"
     )
 
-    # calculate percent within label (based on full label denominator)
-    eng_reason_counts = eng_reason_counts.merge(eng_label_totals[["label", "total_calls"]], on="label", how="left")
+    # calculate percent within label
+    eng_reason_counts = eng_reason_counts.merge(
+        eng_label_totals[["label", "total_calls"]],
+        on="label",
+        how="left"
+    )
     eng_reason_counts["pct_of_label"] = eng_reason_counts["count"] / eng_reason_counts["total_calls"] * 100
-
-    # label order
-    label_order = [
-        "Wi-Fi Status",
-        "Unreliable Wi-Fi",
-        "Slow Wi-Fi",
-        "Poor Coverage",
-        "Other",
-        "Unclear"
-    ]
 
     # determine top X reasons by overall count
     eng_top_reasons = (
@@ -83,9 +74,9 @@ def render_view(df_filtered):
         .sort_values("count", ascending=False)
         .head(top_x)["engineer_reported_symptom"]
     )
-
-    # filter to only top reasons (no "Other" bucket)
-    eng_reason_counts = eng_reason_counts[eng_reason_counts["engineer_reported_symptom"].isin(eng_top_reasons)].copy()
+    eng_reason_counts = eng_reason_counts[
+        eng_reason_counts["engineer_reported_symptom"].isin(eng_top_reasons)
+    ].copy()
 
     # merge totals into chart df
     eng_reason_counts = eng_reason_counts.merge(
@@ -93,6 +84,9 @@ def render_view(df_filtered):
         on="label",
         how="left"
     )
+
+    # build palette from actual data
+    eng_palette = build_global_color_scale(eng_reason_counts['engineer_reported_symptom'].unique().tolist()).range
 
     # build chart
     eng_reason_chart = (
@@ -102,22 +96,10 @@ def render_view(df_filtered):
             x=alt.X(
                 "label_with_total:N",
                 title="Label (Total Calls)",
-                sort=alt.SortArray(
-                    eng_label_totals[
-                        eng_label_totals["label"].isin(label_order)
-                    ]
-                    .assign(
-                        label_order=lambda df: df["label"].map(
-                            {label: i for i, label in enumerate(label_order)}
-                        )
-                    )
-                    .sort_values(by="label_order")["label_with_total"]
-                    .tolist()
-                ),
                 axis=alt.Axis(labelAngle=0, labelLimit=1000)
             ),
             y=alt.Y("pct_of_label:Q", title="% of Label Calls", scale=alt.Scale(domain=[0, 100])),
-            color=alt.Color("engineer_reported_symptom:N", title="Engineer Reason"),
+            color=alt.Color("engineer_reported_symptom:N", title="Engineer Reason", scale=alt.Scale(range=eng_palette)),
             tooltip=[
                 alt.Tooltip("label:N", title="Label"),
                 alt.Tooltip("engineer_reported_symptom:N", title="Engineer Reason"),
@@ -127,12 +109,8 @@ def render_view(df_filtered):
         )
         .properties(height=350)
     )
-
     st.altair_chart(eng_reason_chart, width='stretch')
-
-    # remaining rows after filtering
-    st.caption(f"{eng_label_totals.total_calls.sum():,} or {round(eng_label_totals.total_calls.sum() / len(df_filtered) * 100, 1)}% calls with a BTTEE visit and engineer note  after global filters applied")
-
+    st.caption(f"{eng_label_totals.total_calls.sum():,} calls with a BTTEE visit and engineer note after global filters applied")
     st.divider()
 
 
@@ -145,9 +123,6 @@ def render_view(df_filtered):
     st.info("Alignment is calculated only for calls with a mapped engineer reported reason. Mapping below.")
     st.write("\n\n")
 
-    # confidence filter
-    # filter_col, _ = st.columns([3, 7])
-    # with filter_col:
     with st.expander("Confidence filtering", expanded=False):
         engineer_min_confidence = st.slider(
             "Minimum LLM-derived confidence score:",
@@ -157,16 +132,13 @@ def render_view(df_filtered):
             key="engineer_alignment_confidence"
         )
 
-    # mapping dictionary
     eng_to_llm_map = {
         "TT Broadband - No Sync": "Wi-Fi Status",
-        "TT Broadband -  Connection Dropping out": "Unreliable Wi-Fi",  # has extra space
+        "TT Broadband -  Connection Dropping out": "Unreliable Wi-Fi",
         "TT Broadband - Slow Speed": "Slow Wi-Fi",
     }
-
     df_working["mapped_llm_label_eng"] = df_working["engineer_reported_symptom"].map(eng_to_llm_map)
 
-    # compute alignment based on non-null engineer reasons and confidence filter
     alignment_base = df_working[
         (df_working["engineer_reported_symptom"].notna()) &
         (df_working["confidence"] >= engineer_min_confidence)
@@ -189,8 +161,6 @@ def render_view(df_filtered):
         st.warning("Low sample size — interpret alignment with caution.")
 
     alignment_df = mapped_counts.merge(label_totals_reason, on="label", how="left")
-
-    # compute alignment correctly (only matching labels)
     alignment_df["match_flag"] = alignment_df["label"] == alignment_df["mapped_llm_label_eng"]
     alignment_df["match_count"] = alignment_df["mapped_count"] * alignment_df["match_flag"]
 
@@ -203,12 +173,11 @@ def render_view(df_filtered):
         )
         .reset_index()
     )
-
     alignment_df["alignment_pct"] = (alignment_df["match_count"] / alignment_df["label_reason_count"]) * 100
 
     alignment_chart = (
         alt.Chart(alignment_df)
-        .mark_bar(color="#5A67D8")
+        .mark_bar(color="#A0AEC0")
         .encode(
             y=alt.Y("label:N", sort="-x", title=None),
             x=alt.X("alignment_pct:Q", title="Alignment (%)", scale=alt.Scale(domain=[0, 100])),
@@ -221,16 +190,11 @@ def render_view(df_filtered):
         )
         .properties(height=45 * len(alignment_df))
     )
-
     st.altair_chart(alignment_chart, width='stretch')
 
     with st.expander("Label to Engineer Reported Reason mapping"):
-        label_to_eng_map = pd.DataFrame(
-            list(eng_to_llm_map.items()),
-            columns=["Engineer Reason", "Label"]
-        )
+        label_to_eng_map = pd.DataFrame(list(eng_to_llm_map.items()), columns=["Engineer Reason", "Label"])
         st.table(label_to_eng_map[["Label", "Engineer Reason"]])
-
     st.divider()
 
 
@@ -243,7 +207,6 @@ def render_view(df_filtered):
     st.info("Not all calls have a CSG reason. Distributions are for calls with both values.")
     st.write("\n\n")
 
-    # top X filter
     filter_col, _ = st.columns([3, 7])
     with filter_col:
         top_x = st.slider(
@@ -254,43 +217,13 @@ def render_view(df_filtered):
         )
     st.write("\n\n")
 
-    # remove nulls for reason analysis
     df_reason = df_working[df_working["first_csg_call_reason"].notna()].copy()
-
-    # get counts
-    reason_counts = (
-        df_reason.groupby(["label", "first_csg_call_reason"])
-        .size()
-        .reset_index(name="count")
-    )
-
-    # totals for x-axis (only where reason exists)
-    label_totals = (
-        df_reason.groupby("label")
-        .size()
-        .reset_index(name="total_calls")
-    )
-
-    # add totals to labels
-    label_totals["label_with_total"] = (
-        label_totals["label"] + " (" + (label_totals["total_calls"] / 1000).round(1).astype(str) + "k)"
-    )
-
-    # calculate percent within label (based on full label denominator)
+    reason_counts = df_reason.groupby(["label", "first_csg_call_reason"]).size().reset_index(name="count")
+    label_totals = df_reason.groupby("label").size().reset_index(name="total_calls")
+    label_totals["label_with_total"] = label_totals["label"] + " (" + (label_totals["total_calls"] / 1000).round(1).astype(str) + "k)"
     reason_counts = reason_counts.merge(label_totals[["label", "total_calls"]], on="label", how="left")
     reason_counts["pct_of_label"] = reason_counts["count"] / reason_counts["total_calls"] * 100
 
-    # label order
-    label_order = [
-        "Wi-Fi Status",
-        "Unreliable Wi-Fi",
-        "Slow Wi-Fi",
-        "Poor Coverage",
-        "Other",
-        "Unclear"
-    ]
-
-    # determine top X reasons by overall count
     top_reasons = (
         reason_counts.groupby("first_csg_call_reason")["count"]
         .sum()
@@ -298,41 +231,19 @@ def render_view(df_filtered):
         .sort_values("count", ascending=False)
         .head(top_x)["first_csg_call_reason"]
     )
-
-    # filter to only top reasons (no "Other" bucket)
     reason_counts = reason_counts[reason_counts["first_csg_call_reason"].isin(top_reasons)].copy()
+    reason_counts = reason_counts.merge(label_totals[["label", "label_with_total"]], on="label", how="left")
 
-    # merge totals into chart df
-    reason_counts = reason_counts.merge(
-        label_totals[["label", "label_with_total"]],
-        on="label",
-        how="left"
-    )
+    # build palette from actual data
+    csg_palette = build_global_color_scale(reason_counts['first_csg_call_reason'].unique().tolist()).range
 
-    # build chart
     reason_chart = (
         alt.Chart(reason_counts)
         .mark_bar()
         .encode(
-            x=alt.X(
-                "label_with_total:N",
-                title="Label (Total Calls)",
-                sort=alt.SortArray(
-                    label_totals[
-                        label_totals["label"].isin(label_order)
-                    ]
-                    .assign(
-                        label_order=lambda df: df["label"].map(
-                            {label: i for i, label in enumerate(label_order)}
-                        )
-                    )
-                    .sort_values(by="label_order")["label_with_total"]
-                    .tolist()
-                ),
-                axis=alt.Axis(labelAngle=0, labelLimit=1000)
-            ),
+            x=alt.X("label_with_total:N", title="Label (Total Calls)", axis=alt.Axis(labelAngle=0, labelLimit=1000)),
             y=alt.Y("pct_of_label:Q", title="% of Label Calls", scale=alt.Scale(domain=[0, 100])),
-            color=alt.Color("first_csg_call_reason:N", title="CSG Reason"),
+            color=alt.Color("first_csg_call_reason:N", title="CSG Reason", scale=alt.Scale(range=csg_palette)),
             tooltip=[
                 alt.Tooltip("label:N", title="Label"),
                 alt.Tooltip("first_csg_call_reason:N", title="CSG Reason"),
@@ -342,12 +253,8 @@ def render_view(df_filtered):
         )
         .properties(height=350)
     )
-
     st.altair_chart(reason_chart, width='stretch')
-
-    # remaining rows after filtering
-    st.caption(f"{label_totals.total_calls.sum():,} or {round(label_totals.total_calls.sum() / len(df_filtered) * 100, 1)}% calls with a CSG call reason after global filters applied")
-
+    st.caption(f"{label_totals.total_calls.sum():,} calls with a CSG call reason after global filters applied")
     st.divider()
 
 
@@ -423,7 +330,7 @@ def render_view(df_filtered):
 
     alignment_chart = (
         alt.Chart(alignment_df)
-        .mark_bar(color="#5A67D8")
+        .mark_bar(color="#A0AEC0")
         .encode(
             y=alt.Y("label:N", sort="-x", title=None),
             x=alt.X("alignment_pct:Q", title="Alignment (%)", scale=alt.Scale(domain=[0, 100])),
@@ -473,7 +380,7 @@ def render_view(df_filtered):
 
     conf_chart = (
         alt.Chart(conf_dist)
-        .mark_bar(color="#5A67D8")
+        .mark_bar(color="#38B2AC")
         .encode(
             x=alt.X("confidence_bin:O", title="Confidence (1–10)"),
             y=alt.Y("count:Q", title="Calls"),
@@ -486,7 +393,7 @@ def render_view(df_filtered):
 
     st.subheader("LLM-derived Confidence Score Distribution (1–10)")
     st.write("\n\n")
-    st.warning("LLMs are naturally overconfident. Use with caution.")
+    st.warning("LLMs are naturally overconfident. Higher confidence is correlated with better labelling but use with caution.")
     st.write("\n\n")
     st.altair_chart(conf_chart, width='stretch')
 
