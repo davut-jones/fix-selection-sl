@@ -109,5 +109,5 @@ def render_view(df_filtered):
         }
     )
 
-    st.caption(f"{len(df_filtered):,} calls remaining after filters applied")
+    st.caption(f"{len(df_filtered):,} calls remaining after global filters applied")
     st.divider()

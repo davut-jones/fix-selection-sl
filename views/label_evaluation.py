@@ -22,7 +22,7 @@ def render_view(df_filtered):
 
     st.subheader("Engineer Reported Reasons by Label")
     st.write("\n\n")
-    st.warning("Only calls that end in a BBTTE visit have engineer notes. Distributions are for calls with both values. Mapping below.")
+    st.info("Only calls that end in a BBTTE visit have engineer notes. Distributions are for calls with both values. Mapping below.")
     st.write("\n\n")
 
     # top x filter
@@ -142,7 +142,7 @@ def render_view(df_filtered):
 
     st.subheader("Engineer Reported Reason Alignment by Label")
     st.write("\n\n")
-    st.warning("Alignment is calculated only for calls with a mapped engineer reported reason. Mapping below.")
+    st.info("Alignment is calculated only for calls with a mapped engineer reported reason. Mapping below.")
     st.write("\n\n")
 
     # confidence filter
@@ -240,7 +240,7 @@ def render_view(df_filtered):
 
     st.subheader("CSG Call Reasons by Label")
     st.write("\n\n")
-    st.warning("Not all calls have a CSG reason. Distributions are for calls with both values.")
+    st.info("Not all calls have a CSG reason. Distributions are for calls with both values.")
     st.write("\n\n")
 
     # top X filter
@@ -358,7 +358,7 @@ def render_view(df_filtered):
     st.subheader("CSG Call Reason Alignment by Label")
 
     st.write("\n\n")
-    st.warning("Alignment is calculated only for calls with a mapped CSG call reason.")
+    st.info("Alignment is calculated only for calls with a mapped CSG call reason.")
     st.write("\n\n")
 
     # confidence filter
