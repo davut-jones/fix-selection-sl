@@ -9,27 +9,28 @@
 - [x] Global filters (labels, outcomes, date range)
 - [x] Background, Overview, Label Evaluation, Outcome Analysis views
 - [x] Center metrics styling in overview view
-
-## In Progress
-- [ ] Fix filtering of tables on all other tabs
-- [ ] Test dashboard and build backlog of issues
-- [ ] Fix sorting in dataframes
-- [ ] Axis titles too big on outcome analysis plots, not showing all of them
-- [ ] Add use case prompts/examples on how to use the dashboard
-- [ ] Add split by label / outcome functionality in overview tab
-- [ ] Add misclassified labels for review and LLM improvement
-- [ ] Add model predictions, simple and data science version
-- [ ] Add slides from the deck, turn into PDF and add to the site?
+- [x] Fix sorting of tables in all tables
+- [x] Review "Repeat call rate" vs "Repeat call" terminology
+- [x] Consider changing 'Volume' label to 'Calls' for clarity
 
 
 ## Backlog
+
+- [ ] Axis titles too big on outcome analysis plots, not showing all of them
+- [ ] Add slide content from the deck?
+
 - [ ] Review data and metrics - verify churn definitions, call definitions
-- [ ] Stress test filters with large datasets
+- [ ] Test dashboard and build backlog of issues
+- [ ] Add use case prompts/examples on how to use the dashboard
+- [ ] Fix dataframe size issue on raw label data view and stress test filters with large dataset
+
+- [ ] Password protection setup added back in (AUTH_ENABLED)
+- [ ] Streamlit Cloud deployment configuration checks for time out
+
+- [ ] Add misclassified labels for review and LLM improvement
+- [ ] Add model predictions, simple business meaning and data science metrics
 - [ ] Add fixed states using URL parameters
-- [ ] Review "Repeat call rate" vs "Repeat call" terminology
-- [ ] Consider changing 'Volume' label to 'Calls' for clarity
-- [ ] Password protection setup (AUTH_ENABLED)
-- [ ] Streamlit Cloud deployment configuration
+
 
 ## Notes
 - Primary brand color: #5A67D8

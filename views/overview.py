@@ -180,12 +180,12 @@ def render_view(df_filtered):
 
         # colours aligned with KPI cards (order preserved)
         color_map = {
-            "Calls": "#1E40AF",                # blue
-            "Avg Outcome Cost (£)": "#6B21A8", # purple
-            "Repeat Call Rate (7d)": "#D97706",# yellow / amber
-            "Churn Rate (30d)": "#B91C1C",     # red
+            "Calls": "#1f77b4",                # blue
+            "Avg Outcome Cost (£)": "#9467bd", # purple
+            "Repeat Call Rate (7d)": "#ff7f0e",# yellow / amber
+            "Churn Rate (30d)": "#d62728",     # red
         }
-
+        
         line_color = color_map[metric_choice]
         point_color = color_map[metric_choice]
 
@@ -358,10 +358,10 @@ def render_view(df_filtered):
         }
 
         color_map = {
-            "Calls": "#1E40AF",              # blue
-            "Avg Outcome Cost (£)": "#6B21A8",  # purple
-            "Repeat Call Rate (7d)": "#D97706", # yellow/orange
-            "Churn Rate (30d)": "#B91C1C",      # red
+            "Calls": "#1f77b4",                # blue
+            "Avg Outcome Cost (£)": "#9467bd", # purple
+            "Repeat Call Rate (7d)": "#ff7f0e",# yellow / amber
+            "Churn Rate (30d)": "#d62728",     # red
         }
 
         line_color = color_map[metric_choice]
