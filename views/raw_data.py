@@ -55,49 +55,57 @@ def render_view(df_filtered):
             elif churn_filter == "No":
                 df_filtered = df_filtered[df_filtered["bb_churn_next_30d"] == 0]
 
-    # --- prepare dataframe for display ---
-    df_display = df_filtered[raw_columns].copy()
 
-    if "confidence" in df_display.columns:
-        df_display["confidence"] = df_display["confidence"].fillna(0).astype(int)
+    st.write("\n\n")
+    st.write("\n\n")
+    st.write("\n\n")
+    st.write("**Coming soon...**")
 
-    # rename for display only
-    df_display = df_display.rename(columns={
-        "label": "Label",
-        "long_reason": "Reason",
-        "evidence": "Evidence",
-        "confidence": "Confidence",
-        "selected_outcome_cleaned": "Outcome",
-        "outcome_cost": "Outcome Cost (£)",
-        "sc_call_next_7d_flag": "Repeat Call (7d)",
-        "bb_churn_next_30d": "Churn (30d)",
-        "outcome_ts": "Outcome Timestamp"
-    })
+    ### below code crashes when pushed to prod ###
 
-    display_columns = [
-        "Label", "Outcome", "Reason", "Evidence", "Confidence",
-        "Outcome Cost (£)", "Repeat Call (7d)", "Churn (30d)",
-        "Outcome Timestamp"
-    ]
+    # # --- prepare dataframe for display ---
+    # df_display = df_filtered[raw_columns].copy()
 
-    # --- sort numeric column like the outcomes table ---
-    df_display_sorted = df_display.sort_values(
-        ["Label", "Outcome Cost (£)"], ascending=[False, True]
-    ).reset_index(drop=True)
+    # if "confidence" in df_display.columns:
+    #     df_display["confidence"] = df_display["confidence"].fillna(0).astype(int)
 
-    # --- define display formatting ---
-    display_format = {
-        "Outcome Cost (£)": "£{:,.0f}",
-        "Repeat Call (7d)": lambda v: "Yes" if v == 1 else "No",
-        "Churn (30d)": lambda v: "Yes" if v == 1 else "No"
-    }
+    # # rename for display only
+    # df_display = df_display.rename(columns={
+    #     "label": "Label",
+    #     "long_reason": "Reason",
+    #     "evidence": "Evidence",
+    #     "confidence": "Confidence",
+    #     "selected_outcome_cleaned": "Outcome",
+    #     "outcome_cost": "Outcome Cost (£)",
+    #     "sc_call_next_7d_flag": "Repeat Call (7d)",
+    #     "bb_churn_next_30d": "Churn (30d)",
+    #     "outcome_ts": "Outcome Timestamp"
+    # })
 
-    # --- render using st.data_editor ---
-    st.data_editor(
-        df_display_sorted[display_columns].style.format(display_format),
-        use_container_width=True,
-        disabled=True  # read-only for manual inspection
-    )
+    # display_columns = [
+    #     "Label", "Outcome", "Reason", "Evidence", "Confidence",
+    #     "Outcome Cost (£)", "Repeat Call (7d)", "Churn (30d)",
+    #     "Outcome Timestamp"
+    # ]
 
-    st.caption(f"{len(df_display_sorted):,} calls remaining after global filters applied")
-    st.divider()
+    # # --- sort numeric column like the outcomes table ---
+    # df_display_sorted = df_display.sort_values(
+    #     ["Label", "Outcome Cost (£)"], ascending=[False, True]
+    # ).reset_index(drop=True)
+
+    # # --- define display formatting ---
+    # display_format = {
+    #     "Outcome Cost (£)": "£{:,.0f}",
+    #     "Repeat Call (7d)": lambda v: "Yes" if v == 1 else "No",
+    #     "Churn (30d)": lambda v: "Yes" if v == 1 else "No"
+    # }
+
+    # # --- render using st.data_editor ---
+    # st.data_editor(
+    #     df_display_sorted[display_columns].style.format(display_format),
+    #     use_container_width=True,
+    #     disabled=True  # read-only for manual inspection
+    # )
+
+    # st.caption(f"{len(df_display_sorted):,} calls remaining after global filters applied")
+    # st.divider()
