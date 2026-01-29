@@ -92,22 +92,12 @@ def render_view(df_filtered):
         "Churn (30d)": lambda v: "Yes" if v == 1 else "No"
     }
 
-    # --- render with numeric sorting preserved ---
-    st.dataframe(
+    # --- render using st.data_editor ---
+    st.data_editor(
         df_display_sorted[display_columns].style.format(display_format),
         use_container_width=True,
-        column_config={
-            "Label": st.column_config.TextColumn(),
-            "Outcome": st.column_config.TextColumn(),
-            "Reason": st.column_config.TextColumn(),
-            "Evidence": st.column_config.TextColumn(),
-            "Confidence": st.column_config.NumberColumn(),
-            "Outcome Cost (£)": st.column_config.NumberColumn(),
-            "Repeat Call (7d)": st.column_config.TextColumn(),
-            "Churn (30d)": st.column_config.TextColumn(),
-            "Outcome Timestamp": st.column_config.TextColumn(),
-        }
+        disabled=True  # read-only for manual inspection
     )
 
-    st.caption(f"{len(df_filtered):,} calls remaining after global filters applied")
+    st.caption(f"{len(df_display_sorted):,} calls remaining after global filters applied")
     st.divider()
