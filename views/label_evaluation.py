@@ -32,7 +32,7 @@ def render_view(df_filtered):
 
     st.subheader("Engineer Reported Reasons by Label")
     st.write("\n\n")
-    st.info("Only calls that end in a BBTTE visit have engineer notes. Distributions are for calls with both values. Mapping below.")
+    st.info("Only calls that end in a BBTTE visit have engineer notes. Distributions are for calls with both values.")
     st.write("\n\n")
 
     # top x filter
@@ -293,7 +293,7 @@ def render_view(df_filtered):
     st.subheader("CSG Call Reason Alignment by Label")
 
     st.write("\n\n")
-    st.info("Alignment is calculated only for calls with a mapped CSG call reason.")
+    st.info("Alignment is calculated only for calls with a mapped CSG call reason. Mapping below.")
     st.write("\n\n")
 
     # confidence filter

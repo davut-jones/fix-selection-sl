@@ -45,17 +45,17 @@ def render_view():
     ### 2x2 grid cards ###
     ######################
 
+    st.subheader("Sections")
+    st.write("\n\n")
+
     col1, col2 = st.columns(2)
 
     with col1:
         st.markdown(
             f"""
-            <div style="background-color:#aec7e8; padding: 20px; border-radius: 10px;">
-                <span style="font-size: 24px;">
-                    <i class="bi bi-card-checklist"></i>
-                </span>
-                <h3>Overview</h3>
-                <p>High-level summaries of call issues, customer outcomes, and key metrics</p>
+            <div style="background:#aec7e8; padding:15px; border-radius:5px; text-align:center;">
+                <h3 style="margin:0 0 .6rem; color:#FAF9F6; line-height:1;">Overview</h3>
+                <p style="margin:0; color:#FAF9F6;">High-level summaries of call issues, customer outcomes, and key metrics</p>
             </div>
             """,
             unsafe_allow_html=True
@@ -74,12 +74,9 @@ def render_view():
     with col2:
         st.markdown(
             f"""
-            <div style="background-color:#c5b0d5; padding: 20px; border-radius: 10px;">
-                <span style="font-size: 24px;">
-                    <i class="bi bi-speedometer2"></i>
-                </span>
-                <h3>Label Evaluation</h3>
-                <p>Evaluate how well LLM-generated call issue labels reflect real customer issues</p>
+            <div style="background:#c5b0d5; padding:15px; border-radius:5px; text-align:center;">
+                <h3 style="margin:0 0 .6rem; color:#FAF9F6; line-height:1;">Label Evaluation</h3>
+                <p style="margin:0; color:#FAF9F6;">Evaluate how well LLM-generated call issue labels reflect real customer issues</p>
             </div>
             """,
             unsafe_allow_html=True
@@ -102,12 +99,9 @@ def render_view():
     with col3:
         st.markdown(
             f"""
-            <div style="background-color:#ffbb78; padding: 20px; border-radius: 10px;">
-                <span style="font-size: 24px;">
-                    <i class="bi bi-table"></i>
-                </span>
-                <h3>Outcome Analysis</h3>
-                <p>Explore how different customer outcomes perform for each call issue label</p>
+            <div style="background:#ffbb78; padding:15px; border-radius:5px; text-align:center;">
+                <h3 style="margin:0 0 .6rem; color:#FAF9F6; line-height:1;">Outcome Analysis</h3>
+                <p style="margin:0; color:#FAF9F6;">Explore how different customer outcomes perform for each call issue label</p>
             </div>
             """,
             unsafe_allow_html=True
@@ -128,12 +122,9 @@ def render_view():
     with col4:
         st.markdown(
             f"""
-            <div style="background-color:#ff9896; padding: 20px; border-radius: 10px;">
-                <span style="font-size: 24px;">
-                    <i class="bi bi-database"></i>
-                </span>
-                <h3>Raw Label Data</h3>
-                <p>Inspect the underlying labelled dataset used throughout the dashboard</p>
+            <div style="background:#ff9896; padding:15px; border-radius:5px; text-align:center;">
+                <h3 style="margin:0 0 .6rem; color:#FAF9F6; line-height:1;">Raw Label Data</h3>
+                <p style="margin:0; color:#FAF9F6;">Inspect the underlying labelled dataset used throughout the dashboard</p>
             </div>
             """,
             unsafe_allow_html=True

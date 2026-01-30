@@ -14,16 +14,17 @@
 - [x] Consider changing 'Volume' label to 'Calls' for clarity
 - [x] Axis titles too big on outcome analysis plots, not showing all
 - [x] Add percentages to captions on lable evaluation
+- [x] Fix sort on the stacked bars
+- [x] Number in wrong direction on confidence plot
+- [x] Check spacing on all elements
+- [x] Add slide content from the deck? Tidy up background section
 
 
 ## Backlog
 
 ### Now
 
-- [x] Fix sort on the stacked bars
-- [x] Number in wrong direction on confidence plot
-- [x] Check spacing on all elements
-- [ ] Add slide content from the deck? Tidy up background section
+- Add after feedback from team
 
 ### Next
 
@@ -39,6 +40,7 @@
 - [ ] Add misclassified labels for review and LLM improvement
 - [ ] Add model predictions, simple business and data science version
 - [ ] Add fixed states using URL parameters
+- [ ] Fix comments throughout app
 
 
 ## Notes

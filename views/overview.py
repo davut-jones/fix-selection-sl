@@ -30,13 +30,12 @@ def render_view(df_filtered):
     churn_rate_30 = df_filtered["bb_churn_next_30d"].mean() if total_calls else 0
     avg_cost = df_filtered["outcome_cost"].mean()
 
-    # kpi cards
     def metric_card_colorful(col, label, value, bg_color):
         with col:
             st.markdown(f"""
             <div style="background-color: {bg_color}; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 10px;">
-                <div style='font-size: 15px; color: #1F2937; font-weight: 500; margin-bottom: 5px;'>{label}</div>
-                <div style='font-size: 32px; font-weight: 600; color: #111827;'>{value}</div>
+                <div style='font-size: 16px; color: #FAF9F6; font-weight: 500; margin-bottom: 5px;'>{label}</div>
+                <div style='font-size: 30px; font-weight: 600; color: #FAF9F6;'>{value}</div>
             </div>
             """, unsafe_allow_html=True)
 
