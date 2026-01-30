@@ -393,7 +393,7 @@ def render_view(df_filtered):
 
     st.subheader("LLM-derived Confidence Score Distribution (1–10)")
     st.write("\n\n")
-    st.warning("LLMs are naturally overconfident. Higher confidence is correlated with better labelling but use with caution.")
+    st.info("LLMs are naturally overconfident. Higher confidence is correlated with better labelling but use with caution.")
     st.write("\n\n")
     st.altair_chart(conf_chart, width='stretch')
 
