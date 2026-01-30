@@ -145,7 +145,7 @@ def render_view(df_filtered):
     if view_mode == "Single table":
         st.dataframe(
             df_outcome_display.style.format(display_format),
-            use_container_width=True,
+            width='stretch',
             column_config={col: st.column_config.NumberColumn() if col not in ["Label", "Outcome"] else st.column_config.TextColumn() for col in df_outcome_display.columns}
         )
     else:
@@ -154,7 +154,7 @@ def render_view(df_filtered):
                 df_label_view = df_outcome_display[df_outcome_display["Label"] == label]
                 st.dataframe(
                     df_label_view.style.format(display_format),
-                    use_container_width=True,
+                    width='stretch',
                     column_config={col: st.column_config.NumberColumn() if col not in ["Label", "Outcome"] else st.column_config.TextColumn() for col in df_label_view.columns}
                 )
 

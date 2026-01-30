@@ -103,7 +103,7 @@ def render_view(df_filtered):
     # # --- render using st.data_editor ---
     # st.data_editor(
     #     df_display_sorted[display_columns].style.format(display_format),
-    #     use_container_width=True,
+    #     width='stretch',
     #     disabled=True  # read-only for manual inspection
     # )
 

@@ -98,7 +98,7 @@ def render_view(df_filtered):
 
     st.dataframe(
         df_label_display.style.format(display_format),
-        use_container_width=True,
+        width='stretch',
         column_config={
             "Label": st.column_config.TextColumn(help="Call issue label assigned by the model"),
             "Calls": st.column_config.NumberColumn(help="Number of calls associated with this label"),
@@ -247,7 +247,7 @@ def render_view(df_filtered):
         st.write("\n\n")
         chart = (line + points).properties(height=200)
 
-        st.altair_chart(chart, use_container_width=True)
+        st.altair_chart(chart, width='stretch')
 
     st.divider()
 
@@ -290,7 +290,7 @@ def render_view(df_filtered):
 
     st.dataframe(
         df_outcome_display.style.format(display_format),
-        use_container_width=True,
+        width='stretch',
         column_config={
             "Outcome": st.column_config.TextColumn(help="Outcome selected or applied as a result of the call"),
             "Calls": st.column_config.NumberColumn(help="Number of calls associated with this outcome"),
@@ -425,6 +425,6 @@ def render_view(df_filtered):
         st.write("\n\n")
         chart = (line + points).properties(height=200)
 
-        st.altair_chart(chart, use_container_width=True)
+        st.altair_chart(chart, width='stretch')
 
     st.divider()

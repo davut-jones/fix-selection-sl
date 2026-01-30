@@ -16,8 +16,10 @@
 
 ## Backlog
 
+- [ ] Fix sort on the stacked bars
 - [ ] Axis titles too big on outcome analysis plots, not showing all of them
-- [ ] Add slide content from the deck?
+- [ ] Add slide content from the deck? Tidy up background section
+- [ ] Update README in SC git repo
 
 - [ ] Review data and metrics - verify churn definitions, call definitions
 - [ ] Test dashboard and build backlog of issues
