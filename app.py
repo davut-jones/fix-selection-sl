@@ -208,15 +208,18 @@ if st.session_state.authenticated:
 
     # dynamic title change for each view
     if selected_view == "Background":
-        st.title(dash_name)
-        st.subheader("Data Science & Analtyics")
+        st.markdown(
+            f"<h1 style='color:#5A67D8;'>{dash_name}</h1>",
+            unsafe_allow_html=True
+        )
+        st.subheader("Data Science & Analytics")
         st.write("\n\n")
     else:
         st.title(selected_view)
 
     # view selection
     if selected_view == "Background":
-        render_background(df_label)
+        render_background()
 
     elif selected_view == "Overview":
         render_overview(df_filtered)

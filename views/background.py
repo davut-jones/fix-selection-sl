@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-def render_view(df_filtered):
+def render_view():
 
     vol_formatted = f"{st.session_state['df_label_total_rows'] / 1000:.1f}k"
     start_month_year = pd.to_datetime(st.session_state["df_label_min_dt"]).strftime("%b %y")
@@ -10,25 +10,36 @@ def render_view(df_filtered):
     st.write("\n\n")
     st.write(
         f"""
-        This dashboard provides background context and guidance for Data Science work into **Service Checker Call Label Modelling**.
+        This dashboard provides background context and guidance for Data Science work into
+        **Service Checker Call Label Modelling**.
 
-        **{vol_formatted} Service Checker Hub 4 calls** between **{start_month_year}** and **{end_month_year}** have been processed using
-        a **large language model (LLM)** to assign **call issue labels** aligned to the **Service Checker IHH MOTs**. These labels represent the 
-        underlying issues a customer may face, and therefore contact us due to **Wi-Fi-related issues**.
+        **{vol_formatted} Service Checker Hub 4 calls** between **{start_month_year}** and **{end_month_year}** were processed
+        separately prior to this dashboard using a **large language model (LLM)** to assign
+        **call issue labels** aligned to the **Service Checker IHH MOTs**. These labels represent
+        the underlying **Wi-Fi-related issues** that may drive customers to contact us.
 
-        The purpose of this dashboard is to achieve 2 key objectives:
-        - **Evaluate the quality and reliability of the LLM-derived labels**, and  
-        - **Understand which customer outcomes should be offered** when a given issue is identified, based on
-          operational KPIs such as **churn**, **repeat calls**, and **net change in £**
+        This dashboard is built on top of that labelled dataset and is used to support
+        analysis, validation, and decision-making. All volumes and metrics shown reflect
+        the **currently applied global filters**.
+        
+        The dashboard focuses on two core objectives:
+        - **Assessing the quality and consistency of the LLM-derived call issue labels**, using
+          available operational signals such as **engineer notes** and **CSG call reasons**, and  
+        - **Comparing how different customer outcomes perform** for a given issue label, using
+          operational KPIs including **repeat calls**, **churn**, and **net change in £**.
 
-        Once we have confidence in **1. the call issue labels** and **2. the best outcomes to offer**, we can predict which customers are most likley to
-        face these issues using **machine learning (ML) models**. A POC has already been completed to evaluate the possibility of these models. This
-        dashboard brings these elements together to support decision-making, validation, and future automation.
+        Outcome analysis in this dashboard is **descriptive rather than causal**. It shows how
+        outcomes have historically performed for similar calls, but does not imply that an
+        outcome directly causes a change in customer behaviour.
+
+        Once sufficient confidence is established in **(1) the call issue labels** and
+        **(2) the relative performance of outcomes**, these insights can be used to support
+        **predictive machine learning (ML) models**. A proof of concept has already been
+        completed to assess the feasibility of predicting issue occurrence ahead of contact.
         """
     )
 
     st.divider()
-
 
     ######################
     ### 2x2 grid cards ###
@@ -38,19 +49,18 @@ def render_view(df_filtered):
 
     with col1:
         st.markdown(
-            """
-            <span style="font-size: 24px;">
-                <i class="bi bi-card-checklist"></i>
-            </span>
+            f"""
+            <div style="background-color:#aec7e8; padding: 20px; border-radius: 10px;">
+                <span style="font-size: 24px;">
+                    <i class="bi bi-card-checklist"></i>
+                </span>
+                <h3>Overview</h3>
+                <p>High-level summaries of call issues, customer outcomes, and key metrics</p>
+            </div>
             """,
             unsafe_allow_html=True
         )
         st.write("\n\n")
-        st.subheader("Overview")
-        st.write("\n\n")
-        st.write(
-            "High-level summaries of call issues, outcomes, and key metrics to understand the landscape"
-        )
         with st.expander("More detail"):
             st.write(
                 """
@@ -63,89 +73,81 @@ def render_view(df_filtered):
 
     with col2:
         st.markdown(
-            """
-            <span style="font-size: 24px;">
-                <i class="bi bi-speedometer2"></i>
-            </span>
+            f"""
+            <div style="background-color:#c5b0d5; padding: 20px; border-radius: 10px;">
+                <span style="font-size: 24px;">
+                    <i class="bi bi-speedometer2"></i>
+                </span>
+                <h3>Label Evaluation</h3>
+                <p>Evaluate how well LLM-generated call issue labels reflect real customer issues</p>
+            </div>
             """,
             unsafe_allow_html=True
         )
         st.write("\n\n")
-        st.subheader("Label Evaluation")
-        st.write("\n\n")
-        st.write(
-            "Assess how well LLM-generated call labels reflect real customer issues"
-        )
         with st.expander("More detail"):
             st.write(
                 """
-                Label evaluation focuses on comparing LLM-derived labels with other sources,
-                such as **engineer notes** and **CSG call reasons**.
+                Label evaluation compares LLM-derived labels with other operational signals,
+                including **engineer-reported symptoms** and **CSG call reasons** where available.
 
-                Engineer notes are treated as the strongest signal, as they reflect the
-                on-site diagnosis of the issue. High agreement builds confidence in the
-                labelling approach.
+                These signals are not available for all calls, but provide a strong reference
+                point for assessing consistency and reliability of the labelling approach.
                 """
             )
         st.write("\n\n")
-
 
     col3, col4 = st.columns(2)
 
     with col3:
         st.markdown(
-            """
-            <span style="font-size: 24px;">
-                <i class="bi bi-table"></i>
-            </span>
+            f"""
+            <div style="background-color:#ffbb78; padding: 20px; border-radius: 10px;">
+                <span style="font-size: 24px;">
+                    <i class="bi bi-table"></i>
+                </span>
+                <h3>Outcome Analysis</h3>
+                <p>Explore how different customer outcomes perform for each call issue label</p>
+            </div>
             """,
             unsafe_allow_html=True
         )
         st.write("\n\n")
-        st.subheader("Outcome Analysis")
-        st.write("\n\n")
-        st.write(
-            "Explore which outcomes should be offered for each call issue label"
-        )
         with st.expander("More detail"):
             st.write(
                 """
-                This section supports slicing and dicing the data to understand the
-                operational impact of different outcomes.
+                This section supports comparison of outcomes using operational KPIs such as
+                repeat calls, churn, and cost.
 
-                Users can assess risk across KPIs and group customers into tiers:
-                - **Low risk** – default outcome  
-                - **Medium risk** – agent discretion  
-                - **High risk** – escalation to Tier 2 advisors
+                Outcomes are assessed based on observed historical performance and grouped
+                into **low**, **medium**, and **high** risk tiers to support decision-making.
                 """
             )
         st.write("\n\n")
 
     with col4:
         st.markdown(
-            """
-            <span style="font-size: 24px;">
-                <i class="bi bi-database"></i>
-            </span>
+            f"""
+            <div style="background-color:#ff9896; padding: 20px; border-radius: 10px;">
+                <span style="font-size: 24px;">
+                    <i class="bi bi-database"></i>
+                </span>
+                <h3>Raw Label Data</h3>
+                <p>Inspect the underlying labelled dataset used throughout the dashboard</p>
+            </div>
             """,
             unsafe_allow_html=True
         )
         st.write("\n\n")
-        st.subheader("Raw Label Data")
-        st.write("\n\n")
-        st.write(
-            "Access the underlying labelled dataset for detailed inspection and validation"
-        )
         with st.expander("More detail"):
             st.write(
                 """
-                This section exposes the raw data used throughout the dashboard, including:
+                This section exposes the raw data behind the analysis, enabling manual
+                inspection and validation of:
                 - Call issue labels  
-                - LLM-generated evidence  
-                - Confidence scores  
-                - Selected customer outcomes  
-
-                It enables manual spot-checking and deeper investigation where required.
+                - Supporting evidence  
+                - Selected outcomes  
+                - Customer behaviours such as repeat calls and churn
                 """
             )
         st.write("\n\n")
