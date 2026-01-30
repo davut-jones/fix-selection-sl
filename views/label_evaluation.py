@@ -16,6 +16,16 @@ def render_view(df_filtered):
     # work on a copy to avoid mutating the original dataframe
     df_working = df_filtered.copy()
 
+    # customer label order
+    label_order = [
+        "Wi-Fi Status",
+        "Unreliable Wi-Fi",
+        "Slow Wi-Fi",
+        "Poor Coverage",
+        "Other",
+        "Unclear"
+    ]
+
     ##############################################
     ### section 1 - engineer reasons per label ###
     ##############################################
@@ -88,6 +98,14 @@ def render_view(df_filtered):
     # build palette from actual data
     eng_palette = build_global_color_scale(eng_reason_counts['engineer_reported_symptom'].unique().tolist()).range
 
+    label_order_with_totals = (
+        eng_label_totals
+        .set_index("label")
+        .loc[[lbl for lbl in label_order if lbl in eng_label_totals["label"].values]]
+        ["label_with_total"]
+        .tolist()
+    )
+
     # build chart
     eng_reason_chart = (
         alt.Chart(eng_reason_counts)
@@ -96,7 +114,8 @@ def render_view(df_filtered):
             x=alt.X(
                 "label_with_total:N",
                 title="Label (Total Calls)",
-                axis=alt.Axis(labelAngle=0, labelLimit=1000)
+                axis=alt.Axis(labelAngle=0, labelLimit=1000),
+                sort=alt.SortArray(label_order_with_totals)
             ),
             y=alt.Y("pct_of_label:Q", title="% of Label Calls", scale=alt.Scale(domain=[0, 100])),
             color=alt.Color("engineer_reported_symptom:N", title="Engineer Reason", scale=alt.Scale(range=eng_palette)),
@@ -110,7 +129,7 @@ def render_view(df_filtered):
         .properties(height=350)
     )
     st.altair_chart(eng_reason_chart, width='stretch')
-    st.caption(f"{eng_label_totals.total_calls.sum():,} calls with a BTTEE visit and engineer note after global filters applied")
+    st.caption(f"{eng_label_totals.total_calls.sum():,} or {round(eng_label_totals.total_calls.sum() / len(df_filtered) * 100, 1)}% calls with a BTTEE visit and engineer note after global filters applied")
     st.divider()
 
 
@@ -131,6 +150,7 @@ def render_view(df_filtered):
             value=1,
             key="engineer_alignment_confidence"
         )
+    st.write("\n\n")
 
     eng_to_llm_map = {
         "TT Broadband - No Sync": "Wi-Fi Status",
@@ -237,11 +257,19 @@ def render_view(df_filtered):
     # build palette from actual data
     csg_palette = build_global_color_scale(reason_counts['first_csg_call_reason'].unique().tolist()).range
 
+    csg_label_order_with_totals = (
+        label_totals
+        .set_index("label")
+        .loc[[lbl for lbl in label_order if lbl in label_totals["label"].values]]
+        ["label_with_total"]
+        .tolist()
+    )
+
     reason_chart = (
         alt.Chart(reason_counts)
         .mark_bar()
         .encode(
-            x=alt.X("label_with_total:N", title="Label (Total Calls)", axis=alt.Axis(labelAngle=0, labelLimit=1000)),
+            x=alt.X("label_with_total:N", title="Label (Total Calls)", axis=alt.Axis(labelAngle=0, labelLimit=1000), sort=alt.SortArray(csg_label_order_with_totals)),
             y=alt.Y("pct_of_label:Q", title="% of Label Calls", scale=alt.Scale(domain=[0, 100])),
             color=alt.Color("first_csg_call_reason:N", title="CSG Reason", scale=alt.Scale(range=csg_palette)),
             tooltip=[
@@ -254,7 +282,7 @@ def render_view(df_filtered):
         .properties(height=350)
     )
     st.altair_chart(reason_chart, width='stretch')
-    st.caption(f"{label_totals.total_calls.sum():,} calls with a CSG call reason after global filters applied")
+    st.caption(f"{label_totals.total_calls.sum():,} or {round(label_totals.total_calls.sum() / len(df_filtered) * 100, 1)}% calls with a CSG call reason after global filters applied")
     st.divider()
 
 
@@ -279,6 +307,7 @@ def render_view(df_filtered):
             value=1,
             key="csg_alignment_confidence"
         )
+    st.write("\n\n")
 
     # mapping dictionary
     csg_to_llm_map = {

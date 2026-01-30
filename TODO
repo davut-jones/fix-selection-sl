@@ -12,25 +12,33 @@
 - [x] Fix sorting of tables in all tables
 - [x] Review "Repeat call rate" vs "Repeat call" terminology
 - [x] Consider changing 'Volume' label to 'Calls' for clarity
+- [x] Axis titles too big on outcome analysis plots, not showing all
+- [x] Add percentages to captions on lable evaluation
 
 
 ## Backlog
 
-- [ ] Fix sort on the stacked bars
-- [ ] Axis titles too big on outcome analysis plots, not showing all of them
-- [ ] Add slide content from the deck? Tidy up background section
-- [ ] Update README in SC git repo
+### Now
 
-- [ ] Review data and metrics - verify churn definitions, call definitions
+- [ ] Fix sort on the stacked bars
+- [ ] Number in wrong direction on confidence plot
+- [ ] Check spacing on all elements
+- [ ] Add slide content from the deck? Tidy up background section
+
+### Next
+
+- [ ] Review data and metrics - verify churn, call definitions
 - [ ] Test dashboard and build backlog of issues
 - [ ] Add use case prompts/examples on how to use the dashboard
-- [ ] Fix dataframe size issue on raw label data view and stress test filters with large dataset
+- [ ] Fix dataframe size issue on raw label data view and stress test
 
 - [ ] Password protection setup added back in (AUTH_ENABLED)
 - [ ] Streamlit Cloud deployment configuration checks for time out
 
+### Later
+
 - [ ] Add misclassified labels for review and LLM improvement
-- [ ] Add model predictions, simple business meaning and data science metrics
+- [ ] Add model predictions, simple business and data science version
 - [ ] Add fixed states using URL parameters
 
 
