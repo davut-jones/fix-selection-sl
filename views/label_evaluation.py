@@ -230,7 +230,7 @@ def render_view(df_filtered):
     filter_col, _ = st.columns([3, 7])
     with filter_col:
         top_x = st.slider(
-            "Top X CSG reasons ::",
+            "Top X CSG reasons:",
             min_value=1,
             max_value=len(df_working['first_csg_call_reason'].dropna().value_counts()),
             value=5
@@ -411,7 +411,7 @@ def render_view(df_filtered):
         alt.Chart(conf_dist)
         .mark_bar(color="#38B2AC")
         .encode(
-            x=alt.X("confidence_bin:O", title="Confidence (1–10)"),
+            x=alt.X("confidence_bin:O", title="Confidence (1–10)", axis=alt.Axis(labelAngle=0)),
             y=alt.Y("count:Q", title="Calls"),
             tooltip=[
                 alt.Tooltip("confidence_bin:O", title="Confidence"),
