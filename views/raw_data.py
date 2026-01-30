@@ -11,11 +11,13 @@ def render_view(df_filtered):
     )
     st.divider()
     st.subheader("Manual Inspection of Raw Data")
+    st.write("\n\n")
     st.info(
         "This table is intended for manual inspection and validation. "
         "It shows the exact rows behind the dashboards, including labels, evidence, outcomes, "
         "and customer behaviours like repeat calls and churn."
     )
+    st.write("\n\n")
 
     # --- filter inputs ---
     raw_columns = [
