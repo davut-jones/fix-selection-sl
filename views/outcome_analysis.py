@@ -460,4 +460,38 @@ def render_view(df_filtered):
             unsafe_allow_html=True
         )
 
+    # export risk scores to csv
+    export_df = display_df[[
+        "Outcome", "volume", 
+        "Repeat Call Rate (7d)", "repeat_pct", "repeat_tier", 
+        "Churn Rate (30d)", "churn_pct", "churn_tier", 
+        "Avg. Outcome Cost (£)", "cost_pct", "cost_tier", 
+        "risk_pct", "risk_tier"
+    ]].copy()
+    
+    export_df = export_df.rename(columns={
+        "Outcome": "Outcome",
+        "volume": "Call Volume",
+        "Repeat Call Rate (7d)": "Repeat Call Rate",
+        "repeat_pct": "Repeat Call Risk Score",
+        "repeat_tier": "Repeat Call Risk Tier",
+        "Churn Rate (30d)": "Churn Rate",
+        "churn_pct": "Churn Risk Score",
+        "churn_tier": "Churn Risk Tier",
+        "Avg. Outcome Cost (£)": "Avg. Outcome Cost",
+        "cost_pct": "Cost Risk Score",
+        "cost_tier": "Cost Risk Tier",
+        "risk_pct": "Overall Risk Score",
+        "risk_tier": "Overall Risk Tier"
+    })
+    
+    csv_data = export_df.to_csv(index=False)
+    st.write("\n\n")
+    st.download_button(
+        label="Export Risk Scores",
+        data=csv_data,
+        file_name=f"risk_scores_{selected_label.lower().replace(' ', '_')}.csv",
+        mime="text/csv"
+    )
+
     st.divider()
