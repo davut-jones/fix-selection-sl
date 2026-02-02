@@ -28,6 +28,7 @@
 
 ### Next
 
+- [ ] Make Iori's grid
 - [ ] Review data - verify churn, call definitions
 - [ ] Add prompts / examples on how to use the tiering
 - [ ] Password protection setup added back in (AUTH_ENABLED)

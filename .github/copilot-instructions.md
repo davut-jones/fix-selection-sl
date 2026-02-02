@@ -2,106 +2,198 @@
 
 ## Project Overview
 
-This is a **Streamlit data analytics dashboard** for exploring LLM-derived call issue labels and their associated customer outcomes. The dashboard analyzes 50k+ Service Checker Hub 4 calls to evaluate label quality and identify which outcomes to offer for each issue type.
+**Streamlit analytics dashboard** analyzing 50k+ Service Checker Hub 4 calls (Aug-Nov) with LLM-derived Wi-Fi issue labels. Purpose: assess label quality and compare outcome performance across repeat calls, churn, and costs.
 
-## Architecture Patterns
+**Note:** Comparisons are descriptive, not causal—they show historical performance patterns for similar calls.
 
-### Multi-View Modular Structure
-- **Single entry point**: `app.py` handles authentication, navigation, global filters, and data loading
-- **View modules** (`views/`): Each view is a standalone module with a `render_view(df_filtered)` function:
-  - `background.py` - Project context and business rationale (no filters)
-  - `overview.py` - High-level KPI summaries by label/outcome
-  - `label_evaluation.py` - Deep-dive into label quality metrics
-  - `outcome_analysis.py` - KPI comparison across outcomes with weighted scoring
-  - `raw_data.py` - Filtered raw data export
-- **Utilities** (`utils/`): Visual helpers (`colours.py` for Altair scales, `style.py` for custom Streamlit styling)
+## Data Model & Schema
 
-### Data Flow
-1. CSV loaded once with `@st.cache_data` decorator
-2. Global filters (labels, outcomes, date range) stored in `st.session_state`
-3. Filtered DataFrame passed to view module based on navigation selection
-4. Views are stateless—they receive already-filtered data and render visualizations
+### Key Columns
+- **Label & Evidence:** `label` (Wi-Fi issue type), `other_label`, `long_reason`, `evidence`, `confidence` (model confidence score)
+- **Outcomes:** `selected_outcome_cleaned` (e.g., "Self-service fix", "Engineer visit", "Escalation"), `outcome_cost` (must coerce to numeric), `outcome_ts`
+- **Engineer Data:** `engineer_reported_symptom`, `engineer_reported_cause`, `engineer_reported_action` (BBTTE calls only)
+- **KPIs:** `sc_call_next_7d_flag`, `bb_churn_next_30d`, `bb_churn_next_60d` (binary flags), `call_date` (string in CSV, converted to `.dt.date`)
+- **Integration:** `csg_reason` (CSG system call reason)
+
+### Critical Data Type Handling
+- Load with explicit dtypes for nullable string columns: `dtype={"other_label": "string", "engineer_reported_cause": "string", ...}`
+- Date columns: convert `call_date` to `.dt.date` (not datetime)—Streamlit's `date_input()` expects date objects
+- Numeric KPIs: **always** coerce before calculations: `pd.to_numeric(df[col], errors="coerce")`
+- Outcomes: use `.dropna()` when building filter options—some rows have null `selected_outcome_cleaned`
+
+## Architecture & Code Organization
+
+### Key Design Pattern: Single Entry Point + Stateless Views
+- **`app.py`** (235 lines): 
+  - Data loading & caching via `@st.cache_data`
+  - Session state initialization (filter options, metadata) + reset detection
+  - Global filter controls (sidebar: labels, outcomes, date range)
+  - View routing with filter application logic—**Background receives unfiltered data; all others receive `df_filtered`**
+  - Navigation via `streamlit-option-menu`
+
+- **View modules** (`views/*.py`): Each is **stateless**, receives filtered DataFrame, returns `None` (renders via `st.` calls)
+  ```python
+  def render_view(df_filtered):  # Signature for all views
+      st.write("...")
+  ```
+  - `background.py` - No filters applied; full context
+  - `overview.py` - KPI cards + label summary table with outcomes breakdown
+  - `label_evaluation.py` - Engineer reason distributions per label; BBTTE calls only
+  - `outcome_analysis.py` - Outcome distribution charts by label + KPI comparison tables
+  - `raw_data.py` - Text search, repeat/churn filters, CSV export
+
+- **Utilities:**
+  - `colours.py` - `build_global_color_scale(values)` returns Altair `category20` scale for consistent categorical coloring
+  - `style.py` - Branding helpers (primary: `#5A67D8`)
+
+### Data Flow & Filtering
+1. Load CSV once (cached) with explicit `dtype` for nullable strings
+2. Initialize session state with filter options from data + reset detection (detects new deployments)
+3. Apply filters: `df_filtered = df_label[label filter & outcome filter & date range]` (except Background)
+4. Pass to view; view renders filtered data
 
 ### Critical Session State Variables
 ```python
-st.session_state.selected_labels         # List of active call issue labels
-st.session_state.selected_outcomes       # List of active outcomes
-st.session_state.start_date / end_date   # Date range filter
-st.session_state.authenticated           # Auth flag (currently disabled: AUTH_ENABLED = False)
-st.session_state.df_label_total_rows     # Total row count for context
-st.session_state.global_outcomes         # Distinct outcomes from source data
+st.session_state.selected_labels      # List[str] - Active labels
+st.session_state.selected_outcomes    # List[str] - Active outcomes
+st.session_state.start_date / .end_date  # date - Filter period
+st.session_state.df_label_total_rows  # int - Total rows
+st.session_state.global_outcomes      # List[str] - Distinct outcomes
 ```
 
 ## Development Workflows
 
-### Setup & Execution
+### Local Setup
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-python3 -m streamlit run app.py
+python3 -m streamlit run app.py  # Runs on http://localhost:8501
 ```
-Dashboard runs on `http://localhost:8501` by default.
 
-### Adding New Views
-1. Create `views/new_view_name.py` with `def render_view(df_filtered):` signature
-2. Import the view in `app.py` alongside other view imports
-3. Add to navigation menu options and icon list
-4. Add conditional branch in view selection logic to call `render_new_view_name(df_filtered)`
+### Adding a New View (Standard Pattern)
+1. Create `views/my_view.py` with `def render_view(df_filtered):` function
+2. Import in `app.py` line ~10 and add to navigation menu `option_menu` (line ~155)
+3. Add conditional render logic (line ~220)
+4. **Rule:** If view needs full context (like Background), call `render_view(df_label)` directly; otherwise receives `df_filtered`
 
-### Dependency Management
-- **Minimal required**: Streamlit, pandas, streamlit-option-menu (see `requirements.txt`)
-- Data visualization uses Altair for Streamlit interop—check `outcome_analysis.py` for color scale patterns
-- **No test framework configured**—this is a prototype/analytics tool, not production backend code
+### Modifying Filters
+- Initialization: `app.py` lines ~115–135 (reset detection, label/outcome option extraction)
+- UI widgets: `app.py` lines ~170–200 (multiselect controls)
+- Application: `app.py` lines ~201–215 (filter conditions)
+- To add new filter: Add to session state init → add UI widget → add to filter condition
+
+### Data Column Changes
+If CSV schema changes:
+1. Update `dtype` dict in `load_label_data()` for new string columns
+2. Update column lists in affected views (e.g., `raw_columns` in `raw_data.py`)
+3. Update KPI calculations (coerce numeric types in views, not in `app.py`)
+4. Deploy: filter reset detection auto-resets stale filters on new data
 
 ## Project-Specific Conventions
 
-### Data Type Handling
-- CSV loads `other_label` as string type to preserve nulls
-- Date columns converted to `.dt.date` after loading (not datetime, for sidebar UI compatibility)
-- Numeric KPI columns (`outcome_cost`, churn flags) must be coerced to numeric in views due to CSV data quality: `pd.to_numeric(df[col], errors="coerce")`
+### Data Type Handling (Critical)
+- **CSV Loading**: Explicitly specify string dtypes for nullable columns:
+  ```python
+  dtype={"other_label": "string", "engineer_reported_cause": "string", ...}
+  ```
+- **Date Conversion**: Convert to `.dt.date` (not datetime) for `st.date_input()` compatibility:
+  ```python
+  df["call_date"] = pd.to_datetime(df["call_date"]).dt.date
+  ```
+- **Numeric KPIs**: Always coerce in views before calculations:
+  ```python
+  numeric_cols = ["outcome_cost", "sc_call_next_7d_flag", "bb_churn_next_30d"]
+  for col in numeric_cols:
+      df[col] = pd.to_numeric(df[col], errors="coerce")
+  ```
+- **Nullable Outcomes**: Use `.dropna()` when extracting distinct values:
+  ```python
+  df_label["selected_outcome_cleaned"].dropna().unique()
+  ```
 
 ### Filter Behavior
-- Filters applied **only on non-Background views** (Background shows full dataset for context)
-- Filter state **persists across view navigation** (stored in session state)
-- Filters have smart reset logic to detect data updates (deploy/refresh)—see filter initialization logic in `app.py`
-- Sidebar only displays filter controls when not on Background view
+- **Background Exception**: Receives full `df_label` unfiltered; filters hidden in sidebar
+- **Filter Persistence**: All filters persist in session state across view navigation
+- **Reset Logic** (lines ~115–135, `app.py`):
+  - Detects when filter options change (new deployment)
+  - Compares current `selected_labels` against data's label options
+  - Auto-resets stale filters to prevent "no data" errors
 
-### KPI Metrics & Calculations
-Standard metrics exposed in views:
-- **Repeat Call Rate (7d)**: `sc_call_next_7d_flag` summed / total calls
-- **Churn Rate (30d/60d)**: `bb_churn_next_30d` / `bb_churn_next_60d` summed / total calls
-- **Outcome Cost**: Mean of `outcome_cost` column
-- Outcome Analysis uses **weighted KPI scoring** (user-configurable via sliders)—see `outcome_analysis.py` for weighting formula
+### KPI Metrics (Standard Across All Views)
+- **Total Calls**: `len(df_filtered)`
+- **Repeat Rate (7d)**: `df_filtered["sc_call_next_7d_flag"].mean()` → displayed as %
+- **Churn Rate (30d/60d)**: `df_filtered["bb_churn_next_30d"].mean()` → displayed as %
+- **Avg Outcome Cost**: `df_filtered["outcome_cost"].mean()` → formatted as £
+- **Total Outcome Cost**: `df_filtered["outcome_cost"].sum()` → formatted as £
 
-### Visualization Patterns
-- Altair charts use `build_global_color_scale(values)` from `utils/colours.py` for consistent categorical coloring
-- Custom Streamlit styling via `utils/style.py` (primary color: `#5A67D8`)—use for custom headers when brand consistency needed
-- Bootstrap icons integrated via CDN in page config for sidebar menu icons
+### Visualization & Styling
+- **Color Consistency**: All categorical charts use `build_global_color_scale()` from `colours.py`
+- **Branding**: Primary color `#5A67D8` (indigo); use in headers for custom styling
+- **Metric Cards**: `background-color` divs with `padding: 20px`, `border-radius: 12px`, `color: #FAF9F6` (see `overview.py` template)
+- **Info Boxes**: Use `st.info()` for filtering assumptions and data caveats
+
+## Dependencies & Requirements
+
+**Core Dependencies** (from `requirements.txt`):
+```
+altair==6.0.0          # Interactive charting
+pandas==2.2.0          # Data manipulation
+streamlit==1.53.1      # Web app framework
+streamlit_option_menu==0.4.0  # Sidebar navigation menu
+streamlit_tags==1.2.8  # Tag input widget
+```
+
+- **No test framework** configured—this is an exploratory analytics tool
+- **No external APIs** required—all data sourced from CSV in `data/` folder
 
 ## Key Files & Their Roles
 
 | File | Purpose |
 |------|---------|
-| [app.py](app.py) | App entry point, auth, navigation, filter logic, data loading, view routing |
-| [views/background.py](views/background.py) | Project overview, business context, metrics grid (no filtering) |
-| [views/overview.py](views/overview.py) | KPI summary cards and trends, label/outcome distributions |
-| [views/label_evaluation.py](views/label_evaluation.py) | Validate label quality against ground truth or patterns |
-| [views/outcome_analysis.py](views/outcome_analysis.py) | Weighted KPI scoring for outcomes, decision support |
-| [views/raw_data.py](views/raw_data.py) | Filterable data export (CSV download) |
-| [utils/colours.py](utils/colours.py) | Altair color scale builder for consistent charts |
-| [utils/style.py](utils/style.py) | Custom Streamlit text styling |
-| [requirements.txt](requirements.txt) | Core dependencies (streamlit, pandas, altair) |
+| `app.py` | Entry point, navigation, filter logic, data loading, session state |
+| `views/background.py` | Project overview, business context |
+| `views/overview.py` | KPI cards, label summary table |
+| `views/label_evaluation.py` | Engineer reason distributions (BBTTE calls only) |
+| `views/outcome_analysis.py` | Outcome distribution charts, KPI comparison |
+| `views/raw_data.py` | Raw data inspection, text search, CSV export |
+| `utils/colours.py` | Altair color scale builder for consistency |
+| `utils/style.py` | Custom Streamlit styling helpers |
+| `requirements.txt` | Frozen dependency versions |
 
 ## Deployment & Access Control
 
-- **Production hosting**: Streamlit Cloud
-- **Authentication**: Currently **disabled** (`AUTH_ENABLED = False`)—set to `True` and add `app_password` to Streamlit secrets to enable password-based access
-- **Email-based access** via Streamlit Cloud app settings (requires user sign-in at streamlit.io first)
+- **Production Hosting**: Streamlit Cloud (recommended)
+- **Authentication State**: Currently **disabled** (`AUTH_ENABLED = False` in `app.py` line ~90)
+  - To enable: Set `AUTH_ENABLED = True` and add `app_password` secret to Streamlit Cloud secrets
+  - Password check logic: Lines ~70–86 in `app.py`
+  - Security note: Password stored in Streamlit secrets (not hardcoded)
 
-## Testing & Debugging Notes
+- **Email-based Access**: Via Streamlit Cloud app settings (requires user to sign in with streamlit.io account first)
 
-- **No unit tests**—this is an exploratory analytics dashboard
-- Debug filters by printing `st.session_state` in views or checking sidebar state
-- For CSV data issues, inspect with raw_data view or re-run with fresh data in `data/` folder
-- Watch for date parsing issues if CSV format changes—current logic expects `call_date` column as string-formatted dates
+## Testing, Debugging & Best Practices
+
+### Debugging Patterns
+- **Inspect Session State**: Add `st.json(st.session_state)` to see all filter values
+- **Check Filter Application**: Print `len(df_filtered)` in views to verify filtering
+- **Validate Data**: Use Raw Data view to inspect rows behind visualizations
+
+### Known Data Issues & Mitigations
+- **Missing Engineer Notes**: Only ~10–20% of calls have `engineer_reported_*` columns (BBTTE visits only)
+  - Filter to non-null in Label Evaluation view; display row count
+- **Numeric Type Coercion**: CSV `outcome_cost` loads as string
+  - Use `pd.to_numeric(..., errors="coerce")` before calculations
+- **Outcome Nulls**: Some rows missing `selected_outcome_cleaned`
+  - Use `.dropna()` when building filter options
+
+### Best Practices
+1. **Always use `@st.cache_data`** for data loading and expensive operations
+2. **Pass filtered data to views**, not unfiltered—views consume pre-filtered data
+3. **Preserve session state** in `st.session_state`, not local variables
+4. **Coerce numeric types early** with `pd.to_numeric()` in views before calculations
+5. **Use `.dropna()`** when extracting distinct values for filter options
+6. **Color consistency**: Always use `build_global_color_scale()` for categorical charts
+7. **Document assumptions** using `st.info()` boxes for data filters
+8. **Monitor CSV schema**: Update `dtype` dict and affected views when columns change
+9. **Understand Streamlit reruns**: Every interaction causes full script re-run—use session state for persistence
+
+
