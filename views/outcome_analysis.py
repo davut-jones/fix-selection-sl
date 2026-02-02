@@ -12,7 +12,7 @@ def render_view(df_filtered):
     # page intro text
     st.write("\n\n")
     st.markdown(
-        '<span style="font-size: 1.1rem; font-weight: 400;">For each call issue label evaluate selected outcome performance via repeat calls and churn</span>',
+        '<span style="font-size: 1.1rem; font-weight: 400;">For each call issue label evaluate selected outcome performance via repeat calls and BB churn</span>',
         unsafe_allow_html=True
     )
     st.divider()
@@ -102,7 +102,7 @@ def render_view(df_filtered):
 
     # info box
     st.write("\n\n")
-    st.info("This table shows the outcome mix for each label, along with repeat calls, churn and total outcome cost.")
+    st.info("This table shows the outcome mix for each label, along with repeat calls, BB churn and total outcome cost.")
     st.write("\n\n")
 
     # prepare data for display
@@ -116,7 +116,7 @@ def render_view(df_filtered):
         "avg_outcome_cost": "Avg. Outcome Cost (£)",
         "total_outcome_cost": "Total Outcome Cost (£)",
         "repeat_rate_7d": "Repeat Call Rate (7d)",
-        "churn_rate_30d": "Churn Rate (30d)",
+        "churn_rate_30d": "BB Churn Rate (30d)",
         "pct_total_volume": "% of Filtered",
         "pct_total_all": "% of All Calls",
         # "churn_rate_60d" remains in df but not displayed
@@ -125,7 +125,7 @@ def render_view(df_filtered):
     # select and order columns for display
     df_outcome_display = df_outcome_display[
         ["Label", "Outcome", "Calls", "Avg. Outcome Cost (£)", "Total Outcome Cost (£)",
-         "Repeat Call Rate (7d)", "Churn Rate (30d)", "% of Filtered", "% of All Calls"]
+         "Repeat Call Rate (7d)", "BB Churn Rate (30d)", "% of Filtered", "% of All Calls"]
     ]
 
     # sort outcomes by call volume
@@ -137,7 +137,7 @@ def render_view(df_filtered):
         "Avg. Outcome Cost (£)": "£{:,.0f}",
         "Total Outcome Cost (£)": "£{:,.0f}",
         "Repeat Call Rate (7d)": "{:.1%}",
-        "Churn Rate (30d)": "{:.1%}",
+        "BB Churn Rate (30d)": "{:.1%}",
         "% of Filtered": "{:.1%}",
         "% of All Calls": "{:.1%}",
     }
@@ -194,7 +194,7 @@ def render_view(df_filtered):
     # info box
     st.write("\n\n")
     st.info(
-        "Outcomes ranked across three risk metrics: repeat calls (7d), churn (30d), and cost. Risk scores are calculated across all outcomes and labels. Adjust metric importance and tier boundaries to refine tiers."
+        "Outcomes ranked across three risk metrics: Repeat Call Rate (7d), BB Churn (30d), and Cost. Risk scores are calculated across all outcomes and labels. Adjust metric importance and tier boundaries to refine tiers."
     )
     st.write("\n\n")
 
@@ -213,44 +213,21 @@ def render_view(df_filtered):
         "label": "Label",
         "selected_outcome_cleaned": "Outcome",
         "repeat_rate_7d": "Repeat Call Rate (7d)",
-        "churn_rate_30d": "Churn Rate (30d)",
+        "churn_rate_30d": "BB Churn Rate (30d)",
         "avg_outcome_cost": "Avg. Outcome Cost (£)"
     })
     temp_risk_df["repeat_pct"] = (temp_risk_df["Repeat Call Rate (7d)"].rank(pct=True) * 100).round(1)
-    temp_risk_df["churn_pct"] = (temp_risk_df["Churn Rate (30d)"].rank(pct=True) * 100).round(1)
+    temp_risk_df["churn_pct"] = (temp_risk_df["BB Churn Rate (30d)"].rank(pct=True) * 100).round(1)
     temp_risk_df["cost_pct"] = (temp_risk_df["Avg. Outcome Cost (£)"].rank(pct=True) * 100).round(1)
 
     # configure metric weights and boundaries
     # user can adjust importance of each metric and set tier thresholds
-    with st.expander("Configure weights & boundaries", expanded=False):
-        # weight sliders
-        col1, col2, col3, col4 = st.columns([1, 1, 1, 0.5])
-        with col1:
-            weight_repeat = st.slider(
-                "Repeat call rate importance:",
-                0, 100, st.session_state.get("weight_repeat", 33),
-                key="weight_repeat"
-            )
-        with col2:
-            weight_churn = st.slider(
-                "Churn rate importance:",
-                0, 100, st.session_state.get("weight_churn", 33),
-                key="weight_churn"
-            )
-        with col3:
-            weight_cost = st.slider(
-                "Outcome cost importance:",
-                0, 100, st.session_state.get("weight_cost", 34),
-                key="weight_cost"
-            )
-        with col4:
-            st.button("Reset weights", on_click=reset_weights, key="reset_weights_btn")
-
-        if weight_repeat + weight_churn + weight_cost != 100:
-            st.caption("⚠️ Weights will be normalised automatically to sum to 100%")
-
-        st.divider()
-
+    with st.expander("Configure boundaries & weights", expanded=False):
+        
+        st.markdown("#### Risk Tier Boundaries")
+        st.caption("Set the score thresholds that define Low, Medium, and High risk tiers")
+        st.write("")
+        
         # tier boundary sliders (0-100 score scale)
         t_col1, t_col2, t_col3 = st.columns([1, 1, 0.5])
         with t_col1:
@@ -285,13 +262,13 @@ def render_view(df_filtered):
         cap_col1, cap_col2 = st.columns(2)
         with cap_col1:
             low_tier_repeat = temp_risk_df[temp_risk_df["repeat_pct"] <= low_threshold]["Repeat Call Rate (7d)"].max()
-            low_tier_churn = temp_risk_df[temp_risk_df["churn_pct"] <= low_threshold]["Churn Rate (30d)"].max()
+            low_tier_churn = temp_risk_df[temp_risk_df["churn_pct"] <= low_threshold]["BB Churn Rate (30d)"].max()
             low_tier_cost = temp_risk_df[temp_risk_df["cost_pct"] <= low_threshold]["Avg. Outcome Cost (£)"].max()
             st.markdown(
                 f'<div style="background-color: #f0f2f6; padding: 12px; border-radius: 8px; border-left: 4px solid #4d9e4d;">'
                 f'<div style="font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px;">Low-Medium Boundary = {low_threshold}</div>'
                 f'<div style="font-size: 12px; color: #555;">≤ {low_tier_repeat:.1%} Repeat Call Rate (7d)</div>'
-                f'<div style="font-size: 12px; color: #555;">≤ {low_tier_churn:.1%} Churn Rate (30d)</div>'
+                f'<div style="font-size: 12px; color: #555;">≤ {low_tier_churn:.1%} BB Churn Rate (30d)</div>'
                 f'<div style="font-size: 12px; color: #555;">≤ £{low_tier_cost:.0f} Avg. Outcome Cost</div>'
                 f'</div>',
                 unsafe_allow_html=True
@@ -299,17 +276,94 @@ def render_view(df_filtered):
         
         with cap_col2:
             med_tier_repeat = temp_risk_df[temp_risk_df["repeat_pct"] <= med_threshold]["Repeat Call Rate (7d)"].max()
-            med_tier_churn = temp_risk_df[temp_risk_df["churn_pct"] <= med_threshold]["Churn Rate (30d)"].max()
+            med_tier_churn = temp_risk_df[temp_risk_df["churn_pct"] <= med_threshold]["BB Churn Rate (30d)"].max()
             med_tier_cost = temp_risk_df[temp_risk_df["cost_pct"] <= med_threshold]["Avg. Outcome Cost (£)"].max()
             st.markdown(
                 f'<div style="background-color: #f0f2f6; padding: 12px; border-radius: 8px; border-left: 4px solid #f8953e;">'
                 f'<div style="font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px;">Medium-High Boundary = {med_threshold}</div>'
                 f'<div style="font-size: 12px; color: #555;">≤ {med_tier_repeat:.1%} Repeat Call Rate (7d)</div>'
-                f'<div style="font-size: 12px; color: #555;">≤ {med_tier_churn:.1%} Churn Rate (30d)</div>'
+                f'<div style="font-size: 12px; color: #555;">≤ {med_tier_churn:.1%} BB Churn Rate (30d)</div>'
                 f'<div style="font-size: 12px; color: #555;">≤ £{med_tier_cost:.0f} Avg. Outcome Cost</div>'
                 f'</div>',
                 unsafe_allow_html=True
             )
+        
+        st.write("\n\n")
+        st.divider()
+        
+        st.markdown("#### Metric Importance Weights")
+        st.caption("Adjust how much each metric contributes to the overall risk score")
+        st.write("")
+        
+        # weight sliders
+        col1, col2, col3, col4 = st.columns([1, 1, 1, 0.5])
+        with col1:
+            weight_repeat = st.slider(
+                "Repeat call rate importance:",
+                0, 100, st.session_state.get("weight_repeat", 33),
+                key="weight_repeat"
+            )
+        with col2:
+            weight_churn = st.slider(
+                "BB Churn rate importance:",
+                0, 100, st.session_state.get("weight_churn", 33),
+                key="weight_churn"
+            )
+        with col3:
+            weight_cost = st.slider(
+                "Outcome cost importance:",
+                0, 100, st.session_state.get("weight_cost", 34),
+                key="weight_cost"
+            )
+        with col4:
+            st.button("Reset weights", on_click=reset_weights, key="reset_weights_btn")
+
+        if weight_repeat + weight_churn + weight_cost != 100:
+            st.caption("⚠️ Weights will be normalised automatically to sum to 100%")
+        
+        # calculate normalised weights for display
+        weight_sum = weight_repeat + weight_churn + weight_cost or 1
+        w_repeat_norm = (weight_repeat / weight_sum) * 100
+        w_churn_norm = (weight_churn / weight_sum) * 100
+        w_cost_norm = (weight_cost / weight_sum) * 100
+        
+        st.write("")
+        st.markdown(
+            f'<div style="background-color: #f9f9f9; padding: 16px; border-radius: 8px; border: 1px solid #e0e0e0;">'
+            f'<div style="font-size: 14px; font-weight: 600; color: #333; margin-bottom: 10px;">Current Weight Distribution:</div>'
+            f'<div style="margin-bottom: 8px;">'
+            f'  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">'
+            f'    <span style="font-size: 13px; color: #555;">Repeat Calls</span>'
+            f'    <span style="font-size: 13px; font-weight: 600; color: #ff7f0e;">{w_repeat_norm:.1f}%</span>'
+            f'  </div>'
+            f'  <div style="background-color: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden;">'
+            f'    <div style="background-color: #ff7f0e; height: 100%; width: {w_repeat_norm}%;"></div>'
+            f'  </div>'
+            f'</div>'
+            f'<div style="margin-bottom: 8px;">'
+            f'  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">'
+            f'    <span style="font-size: 13px; color: #555;">BB Churn</span>'
+            f'    <span style="font-size: 13px; font-weight: 600; color: #d62728;">{w_churn_norm:.1f}%</span>'
+            f'  </div>'
+            f'  <div style="background-color: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden;">'
+            f'    <div style="background-color: #d62728; height: 100%; width: {w_churn_norm}%;"></div>'
+            f'  </div>'
+            f'</div>'
+            f'<div style="margin-bottom: 4px;">'
+            f'  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">'
+            f'    <span style="font-size: 13px; color: #555;">Outcome Cost</span>'
+            f'    <span style="font-size: 13px; font-weight: 600; color: #9467bd;">{w_cost_norm:.1f}%</span>'
+            f'  </div>'
+            f'  <div style="background-color: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden;">'
+            f'    <div style="background-color: #9467bd; height: 100%; width: {w_cost_norm}%;"></div>'
+            f'  </div>'
+            f'</div>'
+            f'<div style="font-size: 12px; color: #777; margin-top: 12px; font-style: italic;">'
+            f'Overall Risk Score = ({w_repeat_norm:.1f}% × Repeat Score) + ({w_churn_norm:.1f}% × Churn Score) + ({w_cost_norm:.1f}% × Cost Score)'
+            f'</div>'
+            f'</div>',
+            unsafe_allow_html=True
+        )
         
         st.write("\n\n")
 
@@ -324,13 +378,13 @@ def render_view(df_filtered):
         "label": "Label",
         "selected_outcome_cleaned": "Outcome",
         "repeat_rate_7d": "Repeat Call Rate (7d)",
-        "churn_rate_30d": "Churn Rate (30d)",
+        "churn_rate_30d": "BB Churn Rate (30d)",
         "avg_outcome_cost": "Avg. Outcome Cost (£)"
     })
 
     # calculate percentile scores for each metric
     risk_df["repeat_score"] = risk_df["Repeat Call Rate (7d)"].rank(pct=True)
-    risk_df["churn_score"] = risk_df["Churn Rate (30d)"].rank(pct=True)
+    risk_df["churn_score"] = risk_df["BB Churn Rate (30d)"].rank(pct=True)
     risk_df["cost_score"] = risk_df["Avg. Outcome Cost (£)"].rank(pct=True)
 
     # calculate weighted overall risk score
@@ -429,11 +483,11 @@ def render_view(df_filtered):
         with header_cols[0]:
             st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Repeat Call Risk Score | Actual<br><span style="font-size: 11px; opacity: 0.8;"></div>', unsafe_allow_html=True)
         with header_cols[1]:
-            st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Churn Risk Score | Actual<br><span style="font-size: 11px; opacity: 0.8;"></div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">BB Churn Risk Score | Actual<br><span style="font-size: 11px; opacity: 0.8;"></div>', unsafe_allow_html=True)
         with header_cols[2]:
             st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Cost Risk Score | Actual<br><span style="font-size: 11px; opacity: 0.8;"></div>', unsafe_allow_html=True)
     with col_header_overall:
-        st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Overall Risk Score | Actual</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Overall Risk Score</div>', unsafe_allow_html=True)
     st.write("")
 
     # render outcome risk cards
@@ -470,7 +524,7 @@ def render_view(df_filtered):
                 churn_color = tier_color_map[row["churn_tier"]]
                 st.markdown(
                     f'<div style="background-color: {churn_color}; padding: 6px 4px; border-radius: 4px; text-align: center; color: white; height: 100%; display: flex; align-items: center; justify-content: center;">'
-                    f'<div style="font-size: 16px; font-weight: 700; line-height: 1.3;">{row["churn_pct"]:.0f} <span style="font-weight: 400;">| {row["Churn Rate (30d)"]:.1%}</span></div>'
+                    f'<div style="font-size: 16px; font-weight: 700; line-height: 1.3;">{row["churn_pct"]:.0f} <span style="font-weight: 400;">| {row["BB Churn Rate (30d)"]:.1%}</span></div>'
                     f'</div>',
                     unsafe_allow_html=True
                 )
@@ -512,7 +566,7 @@ def render_view(df_filtered):
     export_df = display_df[[
         "Outcome", "volume", 
         "Repeat Call Rate (7d)", "repeat_pct", "repeat_tier", 
-        "Churn Rate (30d)", "churn_pct", "churn_tier", 
+        "BB Churn Rate (30d)", "churn_pct", "churn_tier", 
         "Avg. Outcome Cost (£)", "cost_pct", "cost_tier", 
         "risk_pct", "risk_tier"
     ]].copy()
@@ -523,9 +577,9 @@ def render_view(df_filtered):
         "Repeat Call Rate (7d)": "Repeat Call Rate",
         "repeat_pct": "Repeat Call Risk Score",
         "repeat_tier": "Repeat Call Risk Tier",
-        "Churn Rate (30d)": "Churn Rate",
-        "churn_pct": "Churn Risk Score",
-        "churn_tier": "Churn Risk Tier",
+        "BB Churn Rate (30d)": "BB Churn Rate",
+        "churn_pct": "BB Churn Risk Score",
+        "churn_tier": "BB Churn Risk Tier",
         "Avg. Outcome Cost (£)": "Avg. Outcome Cost",
         "cost_pct": "Cost Risk Score",
         "cost_tier": "Cost Risk Tier",

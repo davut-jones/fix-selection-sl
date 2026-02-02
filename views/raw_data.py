@@ -15,7 +15,7 @@ def render_view(df_filtered):
     st.info(
         "This table is intended for manual inspection and validation. "
         "It shows the exact rows behind the dashboards, including labels, evidence, outcomes, "
-        "and customer behaviours like repeat calls and churn."
+        "and customer behaviours like repeat calls and BB churn."
     )
     st.write("\n\n")
 
@@ -51,7 +51,7 @@ def render_view(df_filtered):
 
     with col3:
         if "bb_churn_next_30d" in df_filtered.columns:
-            churn_filter = st.selectbox("Churn within 30 days?:", ["All", "Yes", "No"], key="raw_churn")
+            churn_filter = st.selectbox("BB Churn within 30 days?:", ["All", "Yes", "No"], key="raw_churn")
             if churn_filter == "Yes":
                 df_filtered = df_filtered[df_filtered["bb_churn_next_30d"] == 1]
             elif churn_filter == "No":

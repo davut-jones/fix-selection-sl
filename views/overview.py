@@ -45,7 +45,7 @@ def render_view(df_filtered):
     metric_card_colorful(col1, "Calls", f"{total_calls:,}", bg_color="#aec7e8")  # blue
     metric_card_colorful(col2, "Avg Outcome Cost (£)", f"£{avg_cost:,.0f}", bg_color="#c5b0d5")  # purple
     metric_card_colorful(col3, "Repeat Call Rate (7d)", f"{repeat_rate:.1%}", bg_color="#ffbb78")  # yellow
-    metric_card_colorful(col4, "Churn Rate (30d)", f"{churn_rate_30:.1%}", bg_color="#ff9896")  # red
+    metric_card_colorful(col4, "BB Churn Rate (30d)", f"{churn_rate_30:.1%}", bg_color="#ff9896")  # red
     st.write("\n\n")
     st.divider()
 
@@ -130,7 +130,7 @@ def render_view(df_filtered):
 
         metric_choice = col_metric.selectbox(
             "Metric:",
-            ["Calls", "Avg Outcome Cost (£)", "Repeat Call Rate (7d)", "Churn Rate (30d)"],
+            ["Calls", "Avg Outcome Cost (£)", "Repeat Call Rate (7d)", "BB Churn Rate (30d)"],
             index=0,
             key="label_metric_choice"
         )
@@ -177,7 +177,7 @@ def render_view(df_filtered):
             "Calls": "volume",
             "Avg Outcome Cost (£)": "avg_outcome_cost",
             "Repeat Call Rate (7d)": "call_rate_7d",
-            "Churn Rate (30d)": "churn_rate_30d",
+            "BB Churn Rate (30d)": "churn_rate_30d",
         }
 
         # colours aligned with KPI cards (order preserved)
@@ -185,7 +185,7 @@ def render_view(df_filtered):
             "Calls": "#1f77b4",                # blue
             "Avg Outcome Cost (£)": "#9467bd", # purple
             "Repeat Call Rate (7d)": "#ff7f0e",# yellow / amber
-            "Churn Rate (30d)": "#d62728",     # red
+            "BB Churn Rate (30d)": "#d62728",     # red
         }
         
         line_color = color_map[metric_choice]
@@ -319,7 +319,7 @@ def render_view(df_filtered):
         col_metric, col_grain, col_split = st.columns(3)
         metric_choice = col_metric.selectbox(
             "Metric:",
-            ["Calls", "Avg Outcome Cost (£)", "Repeat Call Rate (7d)", "Churn Rate (30d)"],
+            ["Calls", "Avg Outcome Cost (£)", "Repeat Call Rate (7d)", "BB Churn Rate (30d)"],
             index=0,
             key="outcome_metric_choice"
         )
@@ -358,14 +358,14 @@ def render_view(df_filtered):
             "Calls": "volume",
             "Avg Outcome Cost (£)": "avg_outcome_cost",
             "Repeat Call Rate (7d)": "call_rate_7d",
-            "Churn Rate (30d)": "churn_rate_30d",
+            "BB Churn Rate (30d)": "churn_rate_30d",
         }
 
         color_map = {
             "Calls": "#1f77b4",                # blue
             "Avg Outcome Cost (£)": "#9467bd", # purple
             "Repeat Call Rate (7d)": "#ff7f0e",# yellow / amber
-            "Churn Rate (30d)": "#d62728",     # red
+            "BB Churn Rate (30d)": "#d62728",     # red
         }
 
         line_color = color_map[metric_choice]

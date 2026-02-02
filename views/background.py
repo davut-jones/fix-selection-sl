@@ -26,7 +26,7 @@ def render_view():
         - **Assessing the quality and consistency of the LLM-derived call issue labels**, using
           available operational signals such as **engineer notes** and **CSG call reasons**, and  
         - **Comparing how different customer outcomes perform** for a given issue label, using
-          operational KPIs including **repeat calls**, **churn**, and **net change in £**.
+          operational KPIs including **repeat calls**, **BB churn**, and **cost**
 
         Outcome analysis in this dashboard is **descriptive rather than causal**. It shows how
         outcomes have historically performed for similar calls, but does not imply that an
@@ -111,7 +111,7 @@ def render_view():
             st.write(
                 """
                 This section supports comparison of outcomes using operational KPIs such as
-                repeat calls, churn, and cost.
+                repeat calls, BB churn, and cost.
 
                 Outcomes are assessed based on observed historical performance and grouped
                 into **low**, **medium**, and **high** risk tiers to support decision-making.
@@ -138,7 +138,7 @@ def render_view():
                 - Call issue labels  
                 - Supporting evidence  
                 - Selected outcomes  
-                - Customer behaviours such as repeat calls and churn
+                - Customer behaviours such as repeat calls and BB churn
                 """
             )
         st.write("\n\n")
