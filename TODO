@@ -18,21 +18,21 @@
 - [x] Number in wrong direction on confidence plot
 - [x] Check spacing on all elements
 - [x] Add slide content from the deck? Tidy up background section
+- [x] Make Iori's grid
 
 
 ## Backlog
 
 ### Now
 
-- Add after feedback from team
+- [ ] Review data - verify churn, call definitions
 
 ### Next
 
-- [ ] Make Iori's grid
-- [ ] Review data - verify churn, call definitions
 - [ ] Add prompts / examples on how to use the tiering
 - [ ] Password protection setup added back in (AUTH_ENABLED)
 - [ ] Streamlit Cloud deployment configuration checks for time out
+- [ ] Set up time to run through the dashboard
 - [ ] Set up sessions to run Kostis and Catherine though dash
 
 ### Later

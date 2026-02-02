@@ -224,6 +224,12 @@ def render_view(df_filtered):
     # user can adjust importance of each metric and set tier thresholds
     with st.expander("Configure boundaries & weights", expanded=False):
         
+        # initialize session state for boundaries if not already set
+        if "low_threshold" not in st.session_state:
+            st.session_state.low_threshold = 33
+        if "med_threshold" not in st.session_state:
+            st.session_state.med_threshold = 66
+        
         st.markdown("#### Risk Tier Boundaries")
         st.caption("Set the score thresholds that define Low, Medium, and High risk tiers")
         st.write("")
@@ -234,9 +240,8 @@ def render_view(df_filtered):
             low_threshold = st.slider(
                 "Low – medium risk boundary:",
                 0, 100,
-                st.session_state.get("low_threshold", 33),
-                step=1,
                 key="low_threshold",
+                step=1,
                 format="%d"
             )
         
@@ -244,9 +249,8 @@ def render_view(df_filtered):
             med_threshold = st.slider(
                 "Medium – high risk boundary:",
                 0, 100,
-                st.session_state.get("med_threshold", 66),
-                step=1,
                 key="med_threshold",
+                step=1,
                 format="%d"
             )
         
@@ -257,62 +261,87 @@ def render_view(df_filtered):
             st.error("Low-medium boundary must be lower than medium-high boundary.")
             st.stop()
 
-        # display metric ranges at boundaries
+        # display metric ranges at boundaries with stacked bars
         st.write("")
-        cap_col1, cap_col2 = st.columns(2)
-        with cap_col1:
-            low_tier_repeat = temp_risk_df[temp_risk_df["repeat_pct"] <= low_threshold]["Repeat Call Rate (7d)"].max()
-            low_tier_churn = temp_risk_df[temp_risk_df["churn_pct"] <= low_threshold]["BB Churn Rate (30d)"].max()
-            low_tier_cost = temp_risk_df[temp_risk_df["cost_pct"] <= low_threshold]["Avg. Outcome Cost (£)"].max()
-            st.markdown(
-                f'<div style="background-color: #f0f2f6; padding: 12px; border-radius: 8px; border-left: 4px solid #4d9e4d;">'
-                f'<div style="font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px;">Low-Medium Boundary = {low_threshold}</div>'
-                f'<div style="font-size: 12px; color: #555;">≤ {low_tier_repeat:.1%} Repeat Call Rate (7d)</div>'
-                f'<div style="font-size: 12px; color: #555;">≤ {low_tier_churn:.1%} BB Churn Rate (30d)</div>'
-                f'<div style="font-size: 12px; color: #555;">≤ £{low_tier_cost:.0f} Avg. Outcome Cost</div>'
-                f'</div>',
-                unsafe_allow_html=True
-            )
         
-        with cap_col2:
-            med_tier_repeat = temp_risk_df[temp_risk_df["repeat_pct"] <= med_threshold]["Repeat Call Rate (7d)"].max()
-            med_tier_churn = temp_risk_df[temp_risk_df["churn_pct"] <= med_threshold]["BB Churn Rate (30d)"].max()
-            med_tier_cost = temp_risk_df[temp_risk_df["cost_pct"] <= med_threshold]["Avg. Outcome Cost (£)"].max()
-            st.markdown(
-                f'<div style="background-color: #f0f2f6; padding: 12px; border-radius: 8px; border-left: 4px solid #f8953e;">'
-                f'<div style="font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px;">Medium-High Boundary = {med_threshold}</div>'
-                f'<div style="font-size: 12px; color: #555;">≤ {med_tier_repeat:.1%} Repeat Call Rate (7d)</div>'
-                f'<div style="font-size: 12px; color: #555;">≤ {med_tier_churn:.1%} BB Churn Rate (30d)</div>'
-                f'<div style="font-size: 12px; color: #555;">≤ £{med_tier_cost:.0f} Avg. Outcome Cost</div>'
-                f'</div>',
-                unsafe_allow_html=True
-            )
+        # use session state values directly to ensure they update
+        low_threshold_val = st.session_state.low_threshold
+        med_threshold_val = st.session_state.med_threshold
+        
+        low_tier_repeat = temp_risk_df[temp_risk_df["repeat_pct"] <= low_threshold_val]["Repeat Call Rate (7d)"].max()
+        low_tier_churn = temp_risk_df[temp_risk_df["churn_pct"] <= low_threshold_val]["BB Churn Rate (30d)"].max()
+        low_tier_cost = temp_risk_df[temp_risk_df["cost_pct"] <= low_threshold_val]["Avg. Outcome Cost (£)"].max()
+        
+        med_tier_repeat = temp_risk_df[temp_risk_df["repeat_pct"] <= med_threshold_val]["Repeat Call Rate (7d)"].max()
+        med_tier_churn = temp_risk_df[temp_risk_df["churn_pct"] <= med_threshold_val]["BB Churn Rate (30d)"].max()
+        med_tier_cost = temp_risk_df[temp_risk_df["cost_pct"] <= med_threshold_val]["Avg. Outcome Cost (£)"].max()
+        
+        # get min and max values for each metric
+        min_repeat = temp_risk_df["Repeat Call Rate (7d)"].min()
+        max_repeat = temp_risk_df["Repeat Call Rate (7d)"].max()
+        min_churn = temp_risk_df["BB Churn Rate (30d)"].min()
+        max_churn = temp_risk_df["BB Churn Rate (30d)"].max()
+        min_cost = temp_risk_df["Avg. Outcome Cost (£)"].min()
+        max_cost = temp_risk_df["Avg. Outcome Cost (£)"].max()
+        
+        boundary_display = (
+            f'<div style="background-color: #f9f9f9; padding: 16px 20px 12px 20px; border-radius: 8px; border: 1px solid #e0e0e0;">'
+            f'<div style="font-size: 14px; font-weight: 600; color: #333; margin-bottom: 8px;">Current Risk Boundaries:</div>'
+            f'<div style="margin-bottom: 12px;"><div style="font-size: 13px; color: #555; margin-bottom: 4px;">Repeat Call Rate (7d)</div>'
+            f'<div style="position: relative; height: 28px;"><div style="display: flex; height: 8px; border-radius: 4px; overflow: hidden; background-color: #e0e0e0;"><div style="background-color: #4d9e4d; width: {low_threshold_val}%; flex-shrink: 0;"></div><div style="background-color: #f8953e; width: {med_threshold_val - low_threshold_val}%; flex-shrink: 0;"></div><div style="background-color: #d44646; width: {100 - med_threshold_val}%; flex-shrink: 0;"></div></div>'
+            f'<span style="position: absolute; left: 0%; top: 14px; text-align: left; font-size: 11px; font-weight: 600; color: #666; white-space: nowrap;">{min_repeat:.1%}</span>'
+            f'<span style="position: absolute; left: {low_threshold_val}%; top: 14px; transform: translateX(-50%); font-size: 11px; font-weight: 600; color: #666; white-space: nowrap;">{low_tier_repeat:.1%}</span>'
+            f'<span style="position: absolute; left: {med_threshold_val}%; top: 14px; transform: translateX(-50%); font-size: 11px; font-weight: 600; color: #666; white-space: nowrap;">{med_tier_repeat:.1%}</span>'
+            f'<span style="position: absolute; right: 0%; top: 14px; text-align: right; font-size: 11px; font-weight: 600; color: #666; white-space: nowrap;">{max_repeat:.1%}</span></div></div>'
+            f'<div style="margin-bottom: 12px;"><div style="font-size: 13px; color: #555; margin-bottom: 4px;">BB Churn Rate (30d)</div>'
+            f'<div style="position: relative; height: 28px;"><div style="display: flex; height: 8px; border-radius: 4px; overflow: hidden; background-color: #e0e0e0;"><div style="background-color: #4d9e4d; width: {low_threshold_val}%; flex-shrink: 0;"></div><div style="background-color: #f8953e; width: {med_threshold_val - low_threshold_val}%; flex-shrink: 0;"></div><div style="background-color: #d44646; width: {100 - med_threshold_val}%; flex-shrink: 0;"></div></div>'
+            f'<span style="position: absolute; left: 0%; top: 14px; text-align: left; font-size: 11px; font-weight: 600; color: #666; white-space: nowrap;">{min_churn:.1%}</span>'
+            f'<span style="position: absolute; left: {low_threshold_val}%; top: 14px; transform: translateX(-50%); font-size: 11px; font-weight: 600; color: #666; white-space: nowrap;">{low_tier_churn:.1%}</span>'
+            f'<span style="position: absolute; left: {med_threshold_val}%; top: 14px; transform: translateX(-50%); font-size: 11px; font-weight: 600; color: #666; white-space: nowrap;">{med_tier_churn:.1%}</span>'
+            f'<span style="position: absolute; right: 0%; top: 14px; text-align: right; font-size: 11px; font-weight: 600; color: #666; white-space: nowrap;">{max_churn:.1%}</span></div></div>'
+            f'<div><div style="font-size: 13px; color: #555; margin-bottom: 4px;">Avg. Outcome Cost (£)</div>'
+            f'<div style="position: relative; height: 28px;"><div style="display: flex; height: 8px; border-radius: 4px; overflow: hidden; background-color: #e0e0e0;"><div style="background-color: #4d9e4d; width: {low_threshold_val}%; flex-shrink: 0;"></div><div style="background-color: #f8953e; width: {med_threshold_val - low_threshold_val}%; flex-shrink: 0;"></div><div style="background-color: #d44646; width: {100 - med_threshold_val}%; flex-shrink: 0;"></div></div>'
+            f'<span style="position: absolute; left: 0%; top: 14px; text-align: left; font-size: 11px; font-weight: 600; color: #666; white-space: nowrap;">£{min_cost:.0f}</span>'
+            f'<span style="position: absolute; left: {low_threshold_val}%; top: 14px; transform: translateX(-50%); font-size: 11px; font-weight: 600; color: #666; white-space: nowrap;">£{low_tier_cost:.0f}</span>'
+            f'<span style="position: absolute; left: {med_threshold_val}%; top: 14px; transform: translateX(-50%); font-size: 11px; font-weight: 600; color: #666; white-space: nowrap;">£{med_tier_cost:.0f}</span>'
+            f'<span style="position: absolute; right: 0%; top: 14px; text-align: right; font-size: 11px; font-weight: 600; color: #666; white-space: nowrap;">£{max_cost:.0f}</span></div></div>'
+            f'<div style="font-size: 11px; color: #999; margin-top: 8px; font-style: italic;">Green = Low risk | Amber = Medium risk | Red = High risk</div></div>'
+        )
+        
+        st.markdown(boundary_display, unsafe_allow_html=True)
         
         st.write("\n\n")
-        st.divider()
         
         st.markdown("#### Metric Importance Weights")
         st.caption("Adjust how much each metric contributes to the overall risk score")
         st.write("")
+        
+        # initialize session state for weights if not already set
+        if "weight_repeat" not in st.session_state:
+            st.session_state.weight_repeat = 33
+        if "weight_churn" not in st.session_state:
+            st.session_state.weight_churn = 33
+        if "weight_cost" not in st.session_state:
+            st.session_state.weight_cost = 34
         
         # weight sliders
         col1, col2, col3, col4 = st.columns([1, 1, 1, 0.5])
         with col1:
             weight_repeat = st.slider(
                 "Repeat call rate importance:",
-                0, 100, st.session_state.get("weight_repeat", 33),
+                0, 100,
                 key="weight_repeat"
             )
         with col2:
             weight_churn = st.slider(
                 "BB Churn rate importance:",
-                0, 100, st.session_state.get("weight_churn", 33),
+                0, 100,
                 key="weight_churn"
             )
         with col3:
             weight_cost = st.slider(
                 "Outcome cost importance:",
-                0, 100, st.session_state.get("weight_cost", 34),
+                0, 100,
                 key="weight_cost"
             )
         with col4:
@@ -333,7 +362,7 @@ def render_view(df_filtered):
             f'<div style="font-size: 14px; font-weight: 600; color: #333; margin-bottom: 10px;">Current Weight Distribution:</div>'
             f'<div style="margin-bottom: 8px;">'
             f'  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">'
-            f'    <span style="font-size: 13px; color: #555;">Repeat Calls</span>'
+            f'    <span style="font-size: 13px; color: #555;">Repeat Call Rate (7d)</span>'
             f'    <span style="font-size: 13px; font-weight: 600; color: #ff7f0e;">{w_repeat_norm:.1f}%</span>'
             f'  </div>'
             f'  <div style="background-color: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden;">'
@@ -342,7 +371,7 @@ def render_view(df_filtered):
             f'</div>'
             f'<div style="margin-bottom: 8px;">'
             f'  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">'
-            f'    <span style="font-size: 13px; color: #555;">BB Churn</span>'
+            f'    <span style="font-size: 13px; color: #555;">BB Churn Rate (30d)</span>'
             f'    <span style="font-size: 13px; font-weight: 600; color: #d62728;">{w_churn_norm:.1f}%</span>'
             f'  </div>'
             f'  <div style="background-color: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden;">'
@@ -351,7 +380,7 @@ def render_view(df_filtered):
             f'</div>'
             f'<div style="margin-bottom: 4px;">'
             f'  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">'
-            f'    <span style="font-size: 13px; color: #555;">Outcome Cost</span>'
+            f'    <span style="font-size: 13px; color: #555;">Avg. Outcome Cost (£)</span>'
             f'    <span style="font-size: 13px; font-weight: 600; color: #9467bd;">{w_cost_norm:.1f}%</span>'
             f'  </div>'
             f'  <div style="background-color: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden;">'
