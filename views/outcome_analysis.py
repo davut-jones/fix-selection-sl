@@ -5,7 +5,11 @@ from utils.colours import build_global_color_scale
 
 def render_view(df_filtered):
 
-    # page text
+    ########################################
+    ### initialization & setup ###
+    ########################################
+
+    # page intro text
     st.write("\n\n")
     st.markdown(
         '<span style="font-size: 1.1rem; font-weight: 400;">For each call issue label evaluate selected outcome performance via repeat calls and churn</span>',
@@ -13,7 +17,7 @@ def render_view(df_filtered):
     )
     st.divider()
 
-    # fixed colour palette
+    # build colour scale
     all_outcomes = st.session_state["global_outcomes"]
     color_scale = build_global_color_scale(all_outcomes)
 
@@ -21,7 +25,7 @@ def render_view(df_filtered):
     if "view_mode" not in st.session_state:
         st.session_state.view_mode = "Single table"
 
-    # ensure numeric types
+    # ensure numeric types before calculations
     df_working = df_filtered.copy()
     df_working["outcome_cost"] = pd.to_numeric(df_working["outcome_cost"], errors="coerce")
     df_working["sc_call_next_7d_flag"] = pd.to_numeric(df_working["sc_call_next_7d_flag"], errors="coerce")
@@ -32,13 +36,15 @@ def render_view(df_filtered):
     ### section 1 - outcome distribution ###
     ########################################
 
+    # section title
     st.subheader("Outcome Distribution by Label")
 
+    # info box
     st.write("\n\n")
     st.info("Each bar totals 100% after filtering and shows the outcome mix within each label for those selected.")
     st.write("\n\n")
 
-    # aggregate
+    # aggregate outcomes by label
     df_grouped = (
         df_working.groupby(["label", "selected_outcome_cleaned"])
         .agg(
@@ -52,12 +58,12 @@ def render_view(df_filtered):
         .reset_index()
     )
 
-    # pct calculations
+    # calculate percentages
     df_grouped["pct_total_volume"] = df_grouped["volume"] / df_grouped["volume"].sum()
     total_all = st.session_state.get("df_label_total_rows", len(df_working))
     df_grouped["pct_total_all"] = df_grouped["volume"] / total_all
 
-    # chart df
+    # prepare data for charting
     chart_df = df_grouped.copy()
     chart_df["pct_within_label"] = chart_df.groupby("label")["volume"].transform(lambda x: x / x.sum() * 100)
 
@@ -66,6 +72,7 @@ def render_view(df_filtered):
         "Poor Coverage", "Other", "Unclear"
     ]
 
+    # build outcome distribution chart
     chart = (
         alt.Chart(chart_df)
         .mark_bar()
@@ -90,18 +97,19 @@ def render_view(df_filtered):
     ### section 2 - outcome breakdown ###
     #####################################
 
+    # section title
     st.subheader("Outcome Breakdown by Label")
+
+    # info box
     st.write("\n\n")
     st.info("This table shows the outcome mix for each label, along with repeat calls, churn and total outcome cost.")
     st.write("\n\n")
 
-    # copy df_grouped to display table
+    # prepare data for display
     df_outcome_display = df_grouped.copy()
-
-    # create 'Calls' from 'volume'
     df_outcome_display["Calls"] = df_outcome_display["volume"]
 
-    # rename other columns exactly
+    # rename columns for display
     df_outcome_display = df_outcome_display.rename(columns={
         "label": "Label",
         "selected_outcome_cleaned": "Outcome",
@@ -114,16 +122,16 @@ def render_view(df_filtered):
         # "churn_rate_60d" remains in df but not displayed
     })
 
-    # select & order columns exactly
+    # select and order columns for display
     df_outcome_display = df_outcome_display[
         ["Label", "Outcome", "Calls", "Avg. Outcome Cost (£)", "Total Outcome Cost (£)",
          "Repeat Call Rate (7d)", "Churn Rate (30d)", "% of Filtered", "% of All Calls"]
     ]
 
-    # sort by Calls descending
+    # sort outcomes by call volume
     df_outcome_display = df_outcome_display.sort_values("Calls", ascending=False).reset_index(drop=True)
 
-    # display format
+    # define display formatting
     display_format = {
         "Calls": "{:,}",
         "Avg. Outcome Cost (£)": "£{:,.0f}",
@@ -134,7 +142,7 @@ def render_view(df_filtered):
         "% of All Calls": "{:.1%}",
     }
 
-    # view toggle
+    # view mode toggle
     view_mode = st.radio(
         "Choose view:",
         options=["Single table", "Table per call issue label"],
@@ -180,95 +188,93 @@ def render_view(df_filtered):
     ### section 3 - risk tiering ###
     ################################
 
+    # section title
     st.subheader("Risk Tiering by Outcome")
+
+    # info box
     st.write("\n\n")
     st.info(
-        "Assign importance weights to the KPIs below. Percentile-based risk score per outcome grouped "
-        "into **Low**, **Medium** and **High** risk tiers. 0% represents the lowest risk outcome and 100% the highest risk outcome."
+        "Outcomes ranked across three risk metrics: repeat calls (7d), churn (30d), and cost. Risk scores are calculated across all outcomes and labels. Adjust metric importance and tier boundaries to refine tiers."
     )
     st.write("\n\n")
 
-    # -----------------------------
-    # Reset callbacks
-    # -----------------------------
+    # define reset callbacks
     def reset_weights():
         st.session_state.weight_repeat = 33
         st.session_state.weight_churn = 33
         st.session_state.weight_cost = 34
 
     def reset_boundaries():
-        st.session_state.low_threshold = 0.33
-        st.session_state.med_threshold = 0.66
+        st.session_state.low_threshold = 33
+        st.session_state.med_threshold = 66
 
-    # -----------------------------
-    # KPI importance sliders
-    # -----------------------------
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 0.5])
-    with col1:
-        weight_repeat = st.slider(
-            "Repeat call rate (7d) importance:",
-            0, 100, st.session_state.get("weight_repeat", 33),
-            key="weight_repeat"
-        )
-    with col2:
-        weight_churn = st.slider(
-            "Churn rate (30d) importance:",
-            0, 100, st.session_state.get("weight_churn", 33),
-            key="weight_churn"
-        )
-    with col3:
-        weight_cost = st.slider(
-            "Outcome cost importance:",
-            0, 100, st.session_state.get("weight_cost", 34),
-            key="weight_cost"
-        )
-    with col4:
-        st.button("Reset weights", on_click=reset_weights)
+    # configure metric weights and boundaries
+    # user can adjust importance of each metric and set tier thresholds
+    with st.expander("Configure weights & boundaries", expanded=False):
+        # weight sliders
+        col1, col2, col3, col4 = st.columns([1, 1, 1, 0.5])
+        with col1:
+            weight_repeat = st.slider(
+                "Repeat call rate importance:",
+                0, 100, st.session_state.get("weight_repeat", 33),
+                key="weight_repeat"
+            )
+        with col2:
+            weight_churn = st.slider(
+                "Churn rate importance:",
+                0, 100, st.session_state.get("weight_churn", 33),
+                key="weight_churn"
+            )
+        with col3:
+            weight_cost = st.slider(
+                "Outcome cost importance:",
+                0, 100, st.session_state.get("weight_cost", 34),
+                key="weight_cost"
+            )
+        with col4:
+            st.button("Reset weights", on_click=reset_weights, key="reset_weights_btn")
 
-    if weight_repeat + weight_churn + weight_cost != 100:
-        st.warning(
-            "Weights do not add up to 100. They will be normalised automatically."
-        )
+        if weight_repeat + weight_churn + weight_cost != 100:
+            st.caption("⚠️ Weights will be normalised automatically to sum to 100%")
 
-    # -----------------------------
-    # Risk tier thresholds
-    # -----------------------------
-    t_col1, t_col2, t_col3 = st.columns([1, 1, 0.5])
-    with t_col1:
-        low_threshold = st.slider(
-            "Low – medium boundary:",
-            0.0, 1.0,
-            st.session_state.get("low_threshold", 0.33),
-            step=0.01,
-            key="low_threshold"
-        )
-    with t_col2:
-        med_threshold = st.slider(
-            "Medium – high boundary:",
-            0.0, 1.0,
-            st.session_state.get("med_threshold", 0.66),
-            step=0.01,
-            key="med_threshold"
-        )
-    with t_col3:
-        st.button("Reset boundaries", on_click=reset_boundaries)
-
-    if low_threshold >= med_threshold:
-        st.warning("Low-medium boundary must be lower than medium-high boundary.")
         st.divider()
-        st.stop()
 
-    # -----------------------------
-    # Normalise weights
-    # -----------------------------
+        # tier boundary sliders (0-100 score scale)
+        t_col1, t_col2, t_col3 = st.columns([1, 1, 0.5])
+        with t_col1:
+            low_threshold = st.slider(
+                "Low – medium risk boundary:",
+                0, 100,
+                st.session_state.get("low_threshold", 33),
+                step=1,
+                key="low_threshold",
+                format="%d"
+            )
+        with t_col2:
+            med_threshold = st.slider(
+                "Medium – high risk boundary:",
+                0, 100,
+                st.session_state.get("med_threshold", 66),
+                step=1,
+                key="med_threshold",
+                format="%d"
+            )
+        with t_col3:
+            st.button("Reset boundaries", on_click=reset_boundaries, key="reset_boundaries_btn")
+
+        if low_threshold >= med_threshold:
+            st.error("Low-medium boundary must be lower than medium-high boundary.")
+            st.stop()
+
+    st.write("\n\n")
+
+    # normalize weights to sum to 100%
     weight_sum = weight_repeat + weight_churn + weight_cost or 1
     w_repeat = weight_repeat / weight_sum
     w_churn = weight_churn / weight_sum
     w_cost = weight_cost / weight_sum
 
-    # -----------------------------
-    # Build risk dataframe
-    # -----------------------------
+    # build risk dataframe with scoring
     risk_df = df_grouped.copy().rename(columns={
         "label": "Label",
         "selected_outcome_cleaned": "Outcome",
@@ -277,105 +283,181 @@ def render_view(df_filtered):
         "avg_outcome_cost": "Avg. Outcome Cost (£)"
     })
 
+    # calculate percentile scores for each metric
     risk_df["repeat_score"] = risk_df["Repeat Call Rate (7d)"].rank(pct=True)
     risk_df["churn_score"] = risk_df["Churn Rate (30d)"].rank(pct=True)
     risk_df["cost_score"] = risk_df["Avg. Outcome Cost (£)"].rank(pct=True)
 
+    # calculate weighted overall risk score
     risk_df["risk_score"] = (
         risk_df["repeat_score"] * w_repeat +
         risk_df["churn_score"] * w_churn +
         risk_df["cost_score"] * w_cost
     )
 
-    risk_df["risk_tier"] = pd.cut(
-        risk_df["risk_score"],
-        bins=[-0.01, low_threshold, med_threshold, 1.01],
-        labels=["Low", "Medium", "High"]
-    )
+    # convert scores to percentage format (0-100 scale)
     risk_df["risk_pct"] = (risk_df["risk_score"] * 100).round(1)
+    risk_df["repeat_pct"] = (risk_df["repeat_score"] * 100).round(1)
+    risk_df["churn_pct"] = (risk_df["churn_score"] * 100).round(1)
+    risk_df["cost_pct"] = (risk_df["cost_score"] * 100).round(1)
 
-    tier_color_scale = alt.Scale(
-        domain=["Low", "Medium", "High"],
-        range=["#2ECC71", "#FFB300", "#E74C3C"]
+    # categorize overall risk into tiers (using 0-100 score scale)
+    risk_df["risk_tier"] = pd.cut(
+        risk_df["risk_pct"],
+        bins=[0, low_threshold, med_threshold, 100],
+        labels=["Low", "Medium", "High"],
+        include_lowest=True
     )
 
-    # -----------------------------
-    # View controls (ALWAYS rendered)
-    # -----------------------------
-    view_toggle = st.radio(
-        "Choose view:",
-        options=["All labels", "Single label"],
-        index=0,
-        key="risk_view_toggle"
+    # categorize individual metrics into tiers (using 0-100 score scale)
+    risk_df["repeat_tier"] = pd.cut(
+        risk_df["repeat_pct"],
+        bins=[0, low_threshold, med_threshold, 100],
+        labels=["Low", "Medium", "High"],
+        include_lowest=True
     )
+    risk_df["churn_tier"] = pd.cut(
+        risk_df["churn_pct"],
+        bins=[0, low_threshold, med_threshold, 100],
+        labels=["Low", "Medium", "High"],
+        include_lowest=True
+    )
+    risk_df["cost_tier"] = pd.cut(
+        risk_df["cost_pct"],
+        bins=[0, low_threshold, med_threshold, 100],
+        labels=["Low", "Medium", "High"],
+        include_lowest=True
+    )
+
+    # define color palette for risk tiers
+    # tier_color_map = {
+    #     "Low": "#98df8a",
+    #     "Medium": "#ffbb78",
+    #     "High": "#ff9896"
+    # }
+    tier_color_map = {
+        "Low": "#4d9e4d",
+        "Medium": "#f8953e",
+        "High": "#d44646"
+    }
+
     st.write("\n\n")
+
+    # label filter and selection
+    label_order = [
+        "Wi-Fi Status", "Unreliable Wi-Fi", "Slow Wi-Fi",
+        "Poor Coverage", "Other", "Unclear"
+    ]
 
     single_labels = [lbl for lbl in label_order if lbl in risk_df["Label"].unique()]
-    default_label = "Wi-Fi Status"
+    default_label = "Wi-Fi Status" if "Wi-Fi Status" in single_labels else single_labels[0]
 
+    # label selectbox
     selected_label = st.selectbox(
-        "Choose label:",
+        "Select a call issue label:",
         options=single_labels,
         index=single_labels.index(default_label) if default_label in single_labels else 0,
-        disabled=view_toggle != "Single label",
         key="risk_label_select"
     )
-    st.write("\n\n")
+    st.write("")
 
-    # -----------------------------
-    # Chart (fixed container + height)
-    # -----------------------------
-    chart_container = st.container()
-    chart_height = 500
+    # risk tier legend
+    # centered display with color indicators
+    legend_html = '<div style="display: flex; justify-content: center; gap: 32px; margin-bottom: 16px; font-size: 16px; align-items: center; font-weight: 600;">'
+    legend_html += '<div style="display: flex; align-items: center; gap: 8px;"><div style="width: 16px; height: 16px; background-color: #4d9e4d; border-radius: 2px;"></div><span>Low risk</span></div>'
+    legend_html += '<div style="display: flex; align-items: center; gap: 8px;"><div style="width: 16px; height: 16px; background-color: #f8953e; border-radius: 2px;"></div><span>Medium risk</span></div>'
+    legend_html += '<div style="display: flex; align-items: center; gap: 8px;"><div style="width: 16px; height: 16px; background-color: #d44646; border-radius: 2px;"></div><span>High risk</span></div>'
+    legend_html += '</div>'
+    st.markdown(legend_html, unsafe_allow_html=True)
+    st.write("")
 
-    with chart_container:
-        if view_toggle == "Single label":
-            plot_df = risk_df[risk_df["Label"] == selected_label]
+    # filter risk data by selected label
+    display_df = risk_df[risk_df["Label"] == selected_label].sort_values("risk_pct", ascending=False)
 
-            chart = (
-                alt.Chart(plot_df)
-                .mark_circle(size=120)
-                .encode(
-                    x=alt.X("risk_pct:Q", title="Risk score (0–100%)", scale=alt.Scale(domain=[0, 100])),
-                    y=alt.Y(
-                        "Outcome:N",
-                        sort="-x",
-                        title=None,
-                        axis=alt.Axis(labelLimit=400, labelFontSize=12)
-                    ),
-                    color=alt.Color("risk_tier:N", title="Risk tier", scale=tier_color_scale),
-                    tooltip=[
-                        alt.Tooltip("Outcome:N"),
-                        alt.Tooltip("risk_pct:Q", format=".1f"),
-                        alt.Tooltip("risk_tier:N"),
-                        alt.Tooltip("Repeat Call Rate (7d):Q", format=".1%"),
-                        alt.Tooltip("Churn Rate (30d):Q", format=".1%"),
-                        alt.Tooltip("Avg. Outcome Cost (£):Q")
-                    ]
-                )
-                .properties(height=chart_height)
-            )
+    # display column headers
+    col_header_outcome, col_header_cards, col_header_overall = st.columns([1, 2.2, 0.65], gap="small")
+    with col_header_cards:
+        header_cols = st.columns(3, gap="small")
+        with header_cols[0]:
+            st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Repeat Call Risk Score<br><span style="font-size: 11px; opacity: 0.8;"></div>', unsafe_allow_html=True)
+        with header_cols[1]:
+            st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Churn Risk Score<br><span style="font-size: 11px; opacity: 0.8;"></div>', unsafe_allow_html=True)
+        with header_cols[2]:
+            st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Cost Risk Score<br><span style="font-size: 11px; opacity: 0.8;"></div>', unsafe_allow_html=True)
+    with col_header_overall:
+        st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Overall Risk Score</div>', unsafe_allow_html=True)
+    st.write("")
+
+    # render outcome risk cards
+    # format call counts with 'k' notation for 4+ digits
+    def format_calls(volume):
+        if volume >= 1000:
+            return f"{volume/1000:.1f}k"
         else:
-            chart = (
-                alt.Chart(risk_df)
-                .mark_circle(size=120)
-                .encode(
-                    x=alt.X("risk_pct:Q", title="Risk score (0–100%)", scale=alt.Scale(domain=[0, 100])),
-                    y=alt.Y("Label:N", sort=alt.SortArray(label_order), title=None),
-                    color=alt.Color("risk_tier:N", title="Risk tier", scale=tier_color_scale),
-                    tooltip=[
-                        alt.Tooltip("Label:N"),
-                        alt.Tooltip("Outcome:N"),
-                        alt.Tooltip("risk_pct:Q", format=".1f"),
-                        alt.Tooltip("risk_tier:N"),
-                        alt.Tooltip("Repeat Call Rate (7d):Q", format=".1%"),
-                        alt.Tooltip("Churn Rate (30d):Q", format=".1%"),
-                        alt.Tooltip("Avg. Outcome Cost (£):Q")
-                    ]
+            return str(int(volume))
+    
+    # iterate through outcomes and render risk cards
+    for idx, row in display_df.iterrows():
+        col_outcome, col_cards, col_overall = st.columns([1, 2.2, 0.65], gap="small", vertical_alignment="center")
+        
+        with col_outcome:
+            call_count = format_calls(row['volume'])
+            st.markdown(f"<div style='font-size: 16px;'><b>{row['Outcome']}</b> ({call_count} calls)</div>", unsafe_allow_html=True)
+        
+        with col_cards:
+            card_cols = st.columns(3, gap="small", vertical_alignment="center")
+            
+            # repeat call risk card
+            with card_cols[0]:
+                repeat_color = tier_color_map[row["repeat_tier"]]
+                st.markdown(
+                    f'<div style="background-color: {repeat_color}; padding: 6px 4px; border-radius: 4px; text-align: center; color: white; height: 100%; display: flex; align-items: center; justify-content: center;">'
+                    f'<div style="font-size: 16px; font-weight: 700; line-height: 1.3;">{row["repeat_pct"]:.0f} <span style="font-weight: 400;">| {row["Repeat Call Rate (7d)"]:.1%}</span></div>'
+                    f'</div>',
+                    unsafe_allow_html=True
                 )
-                .properties(height=chart_height)
-            )
+            
+            # churn risk card
+            with card_cols[1]:
+                churn_color = tier_color_map[row["churn_tier"]]
+                st.markdown(
+                    f'<div style="background-color: {churn_color}; padding: 6px 4px; border-radius: 4px; text-align: center; color: white; height: 100%; display: flex; align-items: center; justify-content: center;">'
+                    f'<div style="font-size: 16px; font-weight: 700; line-height: 1.3;">{row["churn_pct"]:.0f} <span style="font-weight: 400;">| {row["Churn Rate (30d)"]:.1%}</span></div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+            
+            # cost risk card
+            with card_cols[2]:
+                cost_color = tier_color_map[row["cost_tier"]]
+                st.markdown(
+                    f'<div style="background-color: {cost_color}; padding: 6px 4px; border-radius: 4px; text-align: center; color: white; height: 100%; display: flex; align-items: center; justify-content: center;">'
+                    f'<div style="font-size: 16px; font-weight: 700; line-height: 1.3;">{row["cost_pct"]:.0f} <span style="font-weight: 400;">| £{row["Avg. Outcome Cost (£)"]:.0f}</span></div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+            
+            # overall risk card
+            with col_overall:
+                overall_color = tier_color_map[row["risk_tier"]]
+                asterisk = "*" if row["volume"] < 250 else ""
+                st.markdown(
+                    f'<div style="background-color: {overall_color}; padding: 6px 4px; border-radius: 4px; text-align: center; color: white; border: 2px solid #333; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">'
+                    f'<div style="font-size: 16px; font-weight: 700; line-height: 1.2;">{row["risk_pct"]:.0f}{asterisk}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+        
+        st.markdown("<div style='margin: 0px 0;'></div>", unsafe_allow_html=True)
 
-        st.altair_chart(chart, width="stretch")
+    # footnote for small sample sizes
+    # displayed when outcomes have fewer than 250 calls
+    if (display_df["volume"] < 250).any():
+        st.markdown(
+            "<div style='text-align: right; font-size: 12px; opacity: 0.7; margin-top: 8px;'>"
+            "<span style='color: #666;'>* Small sample size (less than 250 calls) — use with caution</span>"
+            "</div>",
+            unsafe_allow_html=True
+        )
 
     st.divider()
