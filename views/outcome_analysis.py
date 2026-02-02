@@ -208,6 +208,18 @@ def render_view(df_filtered):
         st.session_state.low_threshold = 33
         st.session_state.med_threshold = 66
 
+    # pre-calculate scores for boundary reference (before expander)
+    temp_risk_df = df_grouped.copy().rename(columns={
+        "label": "Label",
+        "selected_outcome_cleaned": "Outcome",
+        "repeat_rate_7d": "Repeat Call Rate (7d)",
+        "churn_rate_30d": "Churn Rate (30d)",
+        "avg_outcome_cost": "Avg. Outcome Cost (£)"
+    })
+    temp_risk_df["repeat_pct"] = (temp_risk_df["Repeat Call Rate (7d)"].rank(pct=True) * 100).round(1)
+    temp_risk_df["churn_pct"] = (temp_risk_df["Churn Rate (30d)"].rank(pct=True) * 100).round(1)
+    temp_risk_df["cost_pct"] = (temp_risk_df["Avg. Outcome Cost (£)"].rank(pct=True) * 100).round(1)
+
     # configure metric weights and boundaries
     # user can adjust importance of each metric and set tier thresholds
     with st.expander("Configure weights & boundaries", expanded=False):
@@ -250,6 +262,7 @@ def render_view(df_filtered):
                 key="low_threshold",
                 format="%d"
             )
+        
         with t_col2:
             med_threshold = st.slider(
                 "Medium – high risk boundary:",
@@ -259,6 +272,7 @@ def render_view(df_filtered):
                 key="med_threshold",
                 format="%d"
             )
+        
         with t_col3:
             st.button("Reset boundaries", on_click=reset_boundaries, key="reset_boundaries_btn")
 
@@ -266,7 +280,38 @@ def render_view(df_filtered):
             st.error("Low-medium boundary must be lower than medium-high boundary.")
             st.stop()
 
-    st.write("\n\n")
+        # display metric ranges at boundaries
+        st.write("")
+        cap_col1, cap_col2 = st.columns(2)
+        with cap_col1:
+            low_tier_repeat = temp_risk_df[temp_risk_df["repeat_pct"] <= low_threshold]["Repeat Call Rate (7d)"].max()
+            low_tier_churn = temp_risk_df[temp_risk_df["churn_pct"] <= low_threshold]["Churn Rate (30d)"].max()
+            low_tier_cost = temp_risk_df[temp_risk_df["cost_pct"] <= low_threshold]["Avg. Outcome Cost (£)"].max()
+            st.markdown(
+                f'<div style="background-color: #f0f2f6; padding: 12px; border-radius: 8px; border-left: 4px solid #4d9e4d;">'
+                f'<div style="font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px;">Low-Medium Boundary = {low_threshold}</div>'
+                f'<div style="font-size: 12px; color: #555;">≤ {low_tier_repeat:.1%} Repeat Call Rate (7d)</div>'
+                f'<div style="font-size: 12px; color: #555;">≤ {low_tier_churn:.1%} Churn Rate (30d)</div>'
+                f'<div style="font-size: 12px; color: #555;">≤ £{low_tier_cost:.0f} Avg. Outcome Cost</div>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
+        
+        with cap_col2:
+            med_tier_repeat = temp_risk_df[temp_risk_df["repeat_pct"] <= med_threshold]["Repeat Call Rate (7d)"].max()
+            med_tier_churn = temp_risk_df[temp_risk_df["churn_pct"] <= med_threshold]["Churn Rate (30d)"].max()
+            med_tier_cost = temp_risk_df[temp_risk_df["cost_pct"] <= med_threshold]["Avg. Outcome Cost (£)"].max()
+            st.markdown(
+                f'<div style="background-color: #f0f2f6; padding: 12px; border-radius: 8px; border-left: 4px solid #f8953e;">'
+                f'<div style="font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px;">Medium-High Boundary = {med_threshold}</div>'
+                f'<div style="font-size: 12px; color: #555;">≤ {med_tier_repeat:.1%} Repeat Call Rate (7d)</div>'
+                f'<div style="font-size: 12px; color: #555;">≤ {med_tier_churn:.1%} Churn Rate (30d)</div>'
+                f'<div style="font-size: 12px; color: #555;">≤ £{med_tier_cost:.0f} Avg. Outcome Cost</div>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
+        
+        st.write("\n\n")
 
     # normalize weights to sum to 100%
     weight_sum = weight_repeat + weight_churn + weight_cost or 1
@@ -374,18 +419,21 @@ def render_view(df_filtered):
     # filter risk data by selected label
     display_df = risk_df[risk_df["Label"] == selected_label].sort_values("risk_pct", ascending=False)
 
+    # display metric ranges at boundaries
+    st.write("")
+
     # display column headers
     col_header_outcome, col_header_cards, col_header_overall = st.columns([1, 2.2, 0.65], gap="small")
     with col_header_cards:
         header_cols = st.columns(3, gap="small")
         with header_cols[0]:
-            st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Repeat Call Risk Score<br><span style="font-size: 11px; opacity: 0.8;"></div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Repeat Call Risk Score | Actual<br><span style="font-size: 11px; opacity: 0.8;"></div>', unsafe_allow_html=True)
         with header_cols[1]:
-            st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Churn Risk Score<br><span style="font-size: 11px; opacity: 0.8;"></div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Churn Risk Score | Actual<br><span style="font-size: 11px; opacity: 0.8;"></div>', unsafe_allow_html=True)
         with header_cols[2]:
-            st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Cost Risk Score<br><span style="font-size: 11px; opacity: 0.8;"></div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Cost Risk Score | Actual<br><span style="font-size: 11px; opacity: 0.8;"></div>', unsafe_allow_html=True)
     with col_header_overall:
-        st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Overall Risk Score</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size: 16px; font-weight: 700; text-align: center; color: #333;">Overall Risk Score | Actual</div>', unsafe_allow_html=True)
     st.write("")
 
     # render outcome risk cards
