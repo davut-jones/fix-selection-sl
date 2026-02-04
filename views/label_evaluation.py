@@ -154,10 +154,13 @@ def render_view(df_filtered):
 
     eng_to_llm_map = {
         "TT Broadband - No Sync": "Wi-Fi Status",
-        "TT Broadband -  Connection Dropping out": "Unreliable Wi-Fi",
+        "TT Broadband -  Connection Dropping out": "Unreliable Wi-Fi", ### do not remove invisible character ###
         "TT Broadband - Slow Speed": "Slow Wi-Fi",
     }
     df_working["mapped_llm_label_eng"] = df_working["engineer_reported_symptom"].map(eng_to_llm_map)
+
+    # impute missing confidence with 1 so all rows are included
+    df_working["confidence"] = df_working["confidence"].fillna(1)
 
     alignment_base = df_working[
         (df_working["engineer_reported_symptom"].notna()) &
@@ -317,6 +320,9 @@ def render_view(df_filtered):
     }
 
     df_working["mapped_llm_label_csg"] = df_working["first_csg_call_reason"].map(csg_to_llm_map)
+
+    # impute missing confidence with 1 so all rows are included
+    df_working["confidence"] = df_working["confidence"].fillna(1)
 
     # compute alignment based on non-null CSG reasons and confidence filter
     alignment_base = df_working[
