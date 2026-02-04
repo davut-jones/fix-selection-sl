@@ -19,29 +19,32 @@
 - [x] Check spacing on all elements
 - [x] Add slide content from the deck? Tidy up background section
 - [x] Make Iori's grid
+- [x] Kostis update
 
 
 ## Backlog
 
 ### Now
 
-- [ ] Review data - verify churn, call definitions
+- [ ] Review data and refresh for v2.1 - verify churn, call definitions
+- [ ] GSM update
+- [ ] Add misclassified labels for review and LLM improvement
+- [ ] Feature clustering to confirm labels
 
 ### Next
 
+- [ ] Reattempt multi-class model after clustering
+- [ ] Transcript cleaning and filtering pre-labelling?
+- [ ] Fix dataframe size issue on raw label data view and stress test - connect to GCP and use org streamlit account?
 - [ ] Add prompts / examples on how to use the tiering
 - [ ] Password protection setup added back in (AUTH_ENABLED)
-- [ ] Streamlit Cloud deployment configuration checks for time out
-- [ ] Set up time to run through the dashboard
-- [ ] Set up sessions to run Kostis and Catherine though dash
+- [ ] Streamlit Cloud deployment configuration to stop sleeping
+- [ ] Catherine and Jo update
 
 ### Later
 
-- [ ] Fix dataframe size issue on raw label data view and stress test
-- [ ] Add misclassified labels for review and LLM improvement
 - [ ] Add model predictions, simple business and data science version
 - [ ] Add fixed states using URL parameters
-- [ ] Fix comments throughout app
 
 
 ## Notes
