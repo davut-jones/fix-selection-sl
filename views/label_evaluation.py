@@ -26,6 +26,7 @@ def render_view(df_filtered):
         "Unclear"
     ]
 
+
     ##############################################
     ### section 1 - engineer reasons per label ###
     ##############################################

@@ -5,9 +5,9 @@ from utils.colours import build_global_color_scale
 
 def render_view(df_filtered):
 
-    ########################################
+    ##############################
     ### initialization & setup ###
-    ########################################
+    ##############################
 
     # page intro text
     st.write("\n\n")
