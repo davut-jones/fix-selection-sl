@@ -26,29 +26,23 @@
 
 ## Backlog
 
-### Now
+### Issue Prediction
 
-- [ ] Add misclassified labels for review and LLM improvement
 - [ ] Feature clustering to confirm labels
+- [ ] Improve labels based on clusters or review misclassified instances
+- [ ] Reattempt multi-class model after clustering and label review
+- [ ] Transcript cleaning and filtering pre-labelling
 
-### Next
+### Fix Selection
 
-- [ ] Reattempt multi-class model after clustering
-- [ ] Transcript cleaning and filtering pre-labelling?
 - [ ] Fix dataframe size issue on raw label data view and stress test - connect to GCP and use org streamlit account?
 - [ ] Add prompts / examples on how to use the tiering
 - [ ] Password protection setup added back in (AUTH_ENABLED)
 - [ ] Streamlit Cloud deployment configuration to stop sleeping
-- [ ] Catherine and Jo update
-- [ ] Rerun on 50-100k rows once v2.1 has built in size
+- [ ] Add fixed states using URL parameters
 
 ### Later
 
-- [ ] Add model predictions, simple business and data science version
-- [ ] Add fixed states using URL parameters
-
-
-## Notes
-- Primary brand color: #5A67D8
-- Dashboard built with Streamlit, Pandas, Altair
-- Data source: 50k+ Service Checker Hub 4 calls (Aug-Nov)
+- [ ] Catherine and Jo update?
+- [ ] Rerun on 50-100k rows once v2.1 has built in size
+- [ ] Add model prediction outputs, simple business measures and data science metrics
