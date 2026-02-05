@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 from utils.colours import build_global_color_scale
+import numpy as np
 
 def render_view(df_filtered):
 
@@ -216,9 +217,18 @@ def render_view(df_filtered):
         "churn_rate_30d": "BB Churn Rate (30d)",
         "avg_outcome_cost": "Avg. Outcome Cost (£)"
     })
-    temp_risk_df["repeat_pct"] = (temp_risk_df["Repeat Call Rate (7d)"].rank(pct=True) * 100).round(1)
-    temp_risk_df["churn_pct"] = (temp_risk_df["BB Churn Rate (30d)"].rank(pct=True) * 100).round(1)
-    temp_risk_df["cost_pct"] = (temp_risk_df["Avg. Outcome Cost (£)"].rank(pct=True) * 100).round(1)
+    
+    # define percent_rank function for temp dataframe
+    def percent_rank_temp(series):
+        ranks = series.rank(method="min")
+        n = len(series)
+        if n == 1:
+            return pd.Series([0.0], index=series.index)
+        return (ranks - 1) / (n - 1)
+    
+    temp_risk_df["repeat_pct"] = (100 * percent_rank_temp(temp_risk_df["Repeat Call Rate (7d)"])).round(0)
+    temp_risk_df["churn_pct"] = (100 * percent_rank_temp(temp_risk_df["BB Churn Rate (30d)"])).round(0)
+    temp_risk_df["cost_pct"] = (100 * percent_rank_temp(temp_risk_df["Avg. Outcome Cost (£)"])).round(0)
 
     # configure metric weights and boundaries
     # user can adjust importance of each metric and set tier thresholds
@@ -434,6 +444,14 @@ def render_view(df_filtered):
     w_churn = weight_churn / weight_sum
     w_cost = weight_cost / weight_sum
 
+    # define percent_rank function (matches BigQuery PERCENT_RANK)
+    def percent_rank(series):
+        ranks = series.rank(method="min")
+        n = len(series)
+        if n == 1:
+            return pd.Series([0.0], index=series.index)
+        return (ranks - 1) / (n - 1)
+
     # build risk dataframe with scoring
     risk_df = df_grouped.copy().rename(columns={
         "label": "Label",
@@ -444,26 +462,26 @@ def render_view(df_filtered):
     })
 
     # calculate percentile scores for each metric
-    risk_df["repeat_score"] = risk_df["Repeat Call Rate (7d)"].rank(pct=True)
-    risk_df["churn_score"] = risk_df["BB Churn Rate (30d)"].rank(pct=True)
-    risk_df["cost_score"] = risk_df["Avg. Outcome Cost (£)"].rank(pct=True)
+    risk_df["repeat_score"] = (100 * percent_rank(risk_df["Repeat Call Rate (7d)"])).round(0)
+    risk_df["churn_score"] = (100 * percent_rank(risk_df["BB Churn Rate (30d)"])).round(0)
+    risk_df["cost_score"] = (100 * percent_rank(risk_df["Avg. Outcome Cost (£)"])).round(0)
 
     # calculate weighted overall risk score
-    risk_df["risk_score"] = (
-        risk_df["repeat_score"] * w_repeat +
-        risk_df["churn_score"] * w_churn +
-        risk_df["cost_score"] * w_cost
-    )
+    risk_df["risk_score"] = np.floor(
+        (risk_df["repeat_score"] * w_repeat) +
+        (risk_df["churn_score"] * w_churn) +
+        (risk_df["cost_score"] * w_cost)
+    ).astype(int)
 
-    # convert scores to percentage format (0-100 scale)
-    risk_df["risk_pct"] = (risk_df["risk_score"] * 100).round(1)
-    risk_df["repeat_pct"] = (risk_df["repeat_score"] * 100).round(1)
-    risk_df["churn_pct"] = (risk_df["churn_score"] * 100).round(1)
-    risk_df["cost_pct"] = (risk_df["cost_score"] * 100).round(1)
+    # convert scores to percentage format (0-100 scale) - already at 0-100 from percent_rank
+    risk_df["risk_pct"] = risk_df["risk_score"]
+    risk_df["repeat_pct"] = risk_df["repeat_score"]
+    risk_df["churn_pct"] = risk_df["churn_score"]
+    risk_df["cost_pct"] = risk_df["cost_score"]
 
     # Calculate overall risk tier using weighted boundaries
-    avg_low = (repeat_low_val * w_repeat + churn_low_val * w_churn + cost_low_val * w_cost)
-    avg_med = (repeat_med_val * w_repeat + churn_med_val * w_churn + cost_med_val * w_cost)
+    avg_low = ((repeat_low_val * w_repeat) + (churn_low_val * w_churn) + (cost_low_val * w_cost))
+    avg_med = ((repeat_med_val * w_repeat) + (churn_med_val * w_churn) + (cost_med_val * w_cost))
     
     # categorize overall risk into tiers using averaged boundaries
     risk_df["risk_tier"] = pd.cut(
@@ -499,6 +517,7 @@ def render_view(df_filtered):
     #     "Medium": "#ffbb78",
     #     "High": "#ff9896"
     # }
+
     tier_color_map = {
         "Low": "#4d9e4d",
         "Medium": "#f8953e",

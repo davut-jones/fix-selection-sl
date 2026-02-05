@@ -20,14 +20,14 @@
 - [x] Add slide content from the deck? Tidy up background section
 - [x] Make Iori's grid
 - [x] Kostis update
+- [x] Review data and repoint ready for v2.1 - verify churn, call definitions
+- [x] GSM update - Liam to offer Emily's support
 
 
 ## Backlog
 
 ### Now
 
-- [ ] Review data and refresh for v2.1 - verify churn, call definitions
-- [ ] GSM update
 - [ ] Add misclassified labels for review and LLM improvement
 - [ ] Feature clustering to confirm labels
 
@@ -40,6 +40,7 @@
 - [ ] Password protection setup added back in (AUTH_ENABLED)
 - [ ] Streamlit Cloud deployment configuration to stop sleeping
 - [ ] Catherine and Jo update
+- [ ] Rerun on 50-100k rows once v2.1 has built in size
 
 ### Later
 
