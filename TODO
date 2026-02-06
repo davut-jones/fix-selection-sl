@@ -28,6 +28,13 @@
 
 ### Issue Prediction
 
+- # MONDAY #
+- [ ] Add confidence score selection to the grid
+- [ ] Add % selected outcome
+- [ ] Add all metrics to export button, clean up naming
+- [ ] Remove outcomes where volumes are too small?
+
+- [ ] Add more filters? Calls in previous 30 days? FTTC vs FTTP etc
 - [ ] Feature clustering to confirm labels
 - [ ] Improve labels based on clusters or review misclassified instances
 - [ ] Reattempt multi-class model after clustering and label review
@@ -46,3 +53,15 @@
 - [ ] Catherine and Jo update?
 - [ ] Rerun on 50-100k rows once v2.1 has built in size
 - [ ] Add model prediction outputs, simple business measures and data science metrics
+
+
+### Support from Emily
+
+- [ ] Take Emily through what we are doing
+- [ ] Explain where we need her support
+
+- [ ] Confirmation of costs
+- [ ] Validate our grouping of outcomes
+- [ ] Support in understanding what each outcome does
+- [ ] Support understanding where certain outcomes are appropriate from a Service perspective
+- [ ] Help in whittling us down to a few label / outcome scenarios
