@@ -24,23 +24,21 @@
 - [x] GSM update - Liam to offer support from member of his team
 - [x] Add confidence score selection to the grid
 - [x] Add % selected outcome
+- [x] Add all metrics to export button, clean up naming
 
 
 ## Backlog
 
 ### Next - Issue Prediction
 
-- MONDAY
-- [ ] Add all metrics to export button, clean up naming
-
 - [ ] Feature clustering to confirm labels
-- [ ] Improve labels based on clusters or review misclassified instances
+- [ ] Improve labels based on clusters and/or review misclassified instances
 - [ ] Reattempt multi-class model after clustering and label review
 - [ ] Transcript cleaning and filtering pre-labelling
 
 ### Next - Fix Selection
 
-- [ ] Add more filters? Calls in previous 30 days? FTTC vs FTTP etc
+- [ ] Add more filters to risk tiering? Calls in previous 30 days? FTTC vs FTTP etc
 - [ ] Fix dataframe size issue on raw label data view and stress test - connect to GCP and use org streamlit account?
 - [ ] Add prompts / examples on how to use the tiering
 - [ ] Password protection setup added back in (AUTH_ENABLED)

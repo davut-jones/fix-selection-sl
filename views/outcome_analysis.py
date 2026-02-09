@@ -694,16 +694,31 @@ def render_view(df_filtered):
 
     # export risk scores to csv
     export_df = display_df[[
-        "Outcome", "volume", 
+        "Outcome", "volume", "suggested_rate",
         "Repeat Call Rate (7d)", "repeat_pct", "repeat_tier", 
         "BB Churn Rate (30d)", "churn_pct", "churn_tier", 
         "Avg. Outcome Cost (£)", "cost_pct", "cost_tier", 
         "risk_pct", "risk_tier"
     ]].copy()
     
+    # calculate volume suggested
+    export_df["volume_suggested"] = (export_df["volume"] * export_df["suggested_rate"]).round(0).astype(int)
+    
+    # round numeric columns
+    export_df["Repeat Call Rate (7d)"] = export_df["Repeat Call Rate (7d)"].round(4)
+    export_df["BB Churn Rate (30d)"] = export_df["BB Churn Rate (30d)"].round(4)
+    export_df["Avg. Outcome Cost (£)"] = export_df["Avg. Outcome Cost (£)"].round(0)
+    export_df["repeat_pct"] = export_df["repeat_pct"].round(0)
+    export_df["churn_pct"] = export_df["churn_pct"].round(0)
+    export_df["cost_pct"] = export_df["cost_pct"].round(0)
+    export_df["risk_pct"] = export_df["risk_pct"].round(0)
+    export_df["suggested_rate"] = export_df["suggested_rate"].round(4)
+    
     export_df = export_df.rename(columns={
         "Outcome": "Outcome",
         "volume": "Call Volume",
+        "volume_suggested": "Volume Suggested",
+        "suggested_rate": "% Suggested",
         "Repeat Call Rate (7d)": "Repeat Call Rate",
         "repeat_pct": "Repeat Call Risk Score",
         "repeat_tier": "Repeat Call Risk Tier",
@@ -716,6 +731,16 @@ def render_view(df_filtered):
         "risk_pct": "Overall Risk Score",
         "risk_tier": "Overall Risk Tier"
     })
+    
+    # reorder columns to put Volume Suggested and % Suggested after Call Volume
+    column_order = [
+        "Outcome", "Call Volume", "Volume Suggested", "% Suggested",
+        "Repeat Call Rate", "Repeat Call Risk Score", "Repeat Call Risk Tier",
+        "BB Churn Rate", "BB Churn Risk Score", "BB Churn Risk Tier",
+        "Avg. Outcome Cost", "Cost Risk Score", "Cost Risk Tier",
+        "Overall Risk Score", "Overall Risk Tier"
+    ]
+    export_df = export_df[column_order]
     
     csv_data = export_df.to_csv(index=False)
     st.write("\n\n")
