@@ -21,18 +21,17 @@
 - [x] Make Iori's grid
 - [x] Kostis update
 - [x] Review data and repoint ready for v2.1 - verify churn, call definitions
-- [x] GSM update - Liam to offer Emily's support
+- [x] GSM update - Liam to offer support from member of his team
+- [x] Add confidence score selection to the grid
+- [x] Add % selected outcome
 
 
 ## Backlog
 
 ### Next - Issue Prediction
 
-- # MONDAY #
-- [ ] Add confidence score selection to the grid
-- [ ] Add % selected outcome
+- MONDAY
 - [ ] Add all metrics to export button, clean up naming
-- [ ] Remove outcomes where volumes are too small?
 
 - [ ] Feature clustering to confirm labels
 - [ ] Improve labels based on clusters or review misclassified instances
@@ -55,7 +54,7 @@
 - [ ] Add model prediction outputs, simple business measures and data science metrics
 
 
-### Support from Emily
+## Support from Emily
 
 - [ ] Take Emily through what we are doing
 - [ ] Explain where we need her support

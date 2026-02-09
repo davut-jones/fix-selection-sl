@@ -208,6 +208,11 @@ def render_view(df_filtered):
     df_working_risk["confidence"] = df_working_risk["confidence"].fillna(1)
     df_working_risk = df_working_risk[df_working_risk["confidence"] >= min_confidence]
     
+    # calculate suggested indicator (where selected == suggested)
+    df_working_risk["is_suggested"] = (
+        df_working_risk["selected_outcome_cleaned"] == df_working_risk["suggested_outcome_cleaned"]
+    ).astype(int)
+    
     # recalculate grouped data with confidence filter applied
     df_grouped_risk = (
         df_working_risk.groupby(["label", "selected_outcome_cleaned"])
@@ -218,6 +223,7 @@ def render_view(df_filtered):
             churn_rate_60d=("bb_churn_next_60d", "mean"),
             avg_outcome_cost=("outcome_cost", "mean"),
             total_outcome_cost=("outcome_cost", "sum"),
+            suggested_rate=("is_suggested", "mean"),
         )
         .reset_index()
     )
@@ -627,7 +633,8 @@ def render_view(df_filtered):
         
         with col_outcome:
             call_count = format_calls(row['volume'])
-            st.markdown(f"<div style='font-size: 16px;'><b>{row['Outcome']}</b> ({call_count} calls)</div>", unsafe_allow_html=True)
+            suggested_pct = row.get('suggested_rate', 0) * 100
+            st.markdown(f"<div style='font-size: 16px;'><b>{row['Outcome']}</b> ({call_count} calls, {suggested_pct:.0f}% suggested)</div>", unsafe_allow_html=True)
         
         with col_cards:
             card_cols = st.columns(3, gap="small", vertical_alignment="center")
