@@ -199,6 +199,29 @@ def render_view(df_filtered):
     )
     st.write("\n\n")
 
+    # apply confidence filter for this section
+    # get confidence value from session state (will be set by slider widget below)
+    min_confidence = st.session_state.get("outcome_analysis_confidence", 1)
+    
+    # filter data by confidence and recalculate grouped data for risk analysis
+    df_working_risk = df_working.copy()
+    df_working_risk["confidence"] = df_working_risk["confidence"].fillna(1)
+    df_working_risk = df_working_risk[df_working_risk["confidence"] >= min_confidence]
+    
+    # recalculate grouped data with confidence filter applied
+    df_grouped_risk = (
+        df_working_risk.groupby(["label", "selected_outcome_cleaned"])
+        .agg(
+            volume=("selected_outcome_cleaned", "size"),
+            repeat_rate_7d=("sc_call_next_7d_flag", "mean"),
+            churn_rate_30d=("bb_churn_next_30d", "mean"),
+            churn_rate_60d=("bb_churn_next_60d", "mean"),
+            avg_outcome_cost=("outcome_cost", "mean"),
+            total_outcome_cost=("outcome_cost", "sum"),
+        )
+        .reset_index()
+    )
+
     # define reset callbacks
     def reset_weights():
         st.session_state.weight_repeat = 33
@@ -210,7 +233,7 @@ def render_view(df_filtered):
         st.session_state.med_threshold = 66
 
     # pre-calculate scores for boundary reference (before expander)
-    temp_risk_df = df_grouped.copy().rename(columns={
+    temp_risk_df = df_grouped_risk.copy().rename(columns={
         "label": "Label",
         "selected_outcome_cleaned": "Outcome",
         "repeat_rate_7d": "Repeat Call Rate (7d)",
@@ -453,7 +476,7 @@ def render_view(df_filtered):
         return (ranks - 1) / (n - 1)
 
     # build risk dataframe with scoring
-    risk_df = df_grouped.copy().rename(columns={
+    risk_df = df_grouped_risk.copy().rename(columns={
         "label": "Label",
         "selected_outcome_cleaned": "Outcome",
         "repeat_rate_7d": "Repeat Call Rate (7d)",
@@ -544,6 +567,18 @@ def render_view(df_filtered):
     )
     st.write("")
 
+    # confidence filter
+    with st.expander("Confidence filtering", expanded=False):
+        min_confidence = st.slider(
+            "Minimum LLM-derived confidence score:",
+            min_value=1,
+            max_value=10,
+            value=1,
+            key="outcome_analysis_confidence"
+        )
+        st.caption(f"{len(df_working_risk):,} calls remaining after confidence filter (≥{min_confidence})")
+    st.write("\n\n")
+    
     # risk tier legend
     # centered display with color indicators
     legend_html = '<div style="display: flex; justify-content: center; gap: 32px; margin-bottom: 16px; font-size: 16px; align-items: center; font-weight: 600;">'
