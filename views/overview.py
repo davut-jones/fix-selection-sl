@@ -258,7 +258,7 @@ def render_view(df_filtered):
     ### section 3 - outcome summary table ###
     #########################################
 
-    st.subheader("Outcome Summary")
+    st.subheader("Selected Outcome Summary")
     st.write("\n\n")
 
     df_outcome_summary = (
