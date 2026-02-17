@@ -13,7 +13,8 @@ def render_view():
         This dashboard provides background context and guidance for Data Science work into
         **Service Checker Call Label Modelling**.
 
-        **{vol_formatted} Service Checker Hub 4 calls** between **{start_month_year}** and **{end_month_year}** were processed
+        **{vol_formatted} Service Checker Hub 4 calls** between **{start_month_year}** and **{end_month_year}**
+        where **LHC = GREEN** were processed
         separately prior to this dashboard using a **large language model (LLM)** to assign
         **call issue labels** aligned to the **Service Checker IHH MOTs**. These labels represent
         the underlying **Wi-Fi-related issues** that may drive customers to contact us.
