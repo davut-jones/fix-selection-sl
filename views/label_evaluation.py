@@ -437,3 +437,102 @@ def render_view(df_filtered):
     st.caption(f"{sum(conf_dist['count']):,} or {round(sum(conf_dist['count']) / len(df_filtered) * 100, 1)}% calls with a confidence score after global filters applied")
 
     st.divider()
+
+    ##################################
+    ### section 6 - MOT comparison ###
+    ##################################
+
+    st.subheader("Label Comparison vs IHH MOTs in last week")
+    st.write("\n\n")
+    st.info("MOTs are not optimised to identify to calls. Do not expect perfect alignment.")
+    st.write("\n\n")
+
+    # define all 4 MOT markers
+    mot_columns = {
+        "Wi-Fi Status MOT": "mot_wifi_status_any_red_prev_1wk",
+        "Unreliable Wi-Fi MOT": "mot_unreliable_wifi_any_red_prev_1wk",
+        "Slow Wi-Fi MOT": "mot_slow_wifi_any_red_prev_1wk",
+        "Poor Coverage MOT": "mot_poor_coverage_any_red_prev_1wk"
+    }
+    
+    # define the 4 labels we want to compare
+    comparison_labels = ["Wi-Fi Status", "Unreliable Wi-Fi", "Slow Wi-Fi", "Poor Coverage"]
+
+    # calculate % with each MOT marker = 1 for each label
+    mot_comparison_data = []
+    for label_name in comparison_labels:
+        # filter to this label
+        label_df = df_working[df_working["label"] == label_name]
+        
+        if len(label_df) > 0:
+            call_count = len(label_df)
+            
+            # for each MOT marker, calculate percentage
+            for mot_name, mot_column in mot_columns.items():
+                if mot_column in label_df.columns:
+                    # convert to numeric and count where = 1
+                    mot_values = pd.to_numeric(label_df[mot_column], errors="coerce")
+                    pct_with_mot = (mot_values == 1).sum() / len(label_df) * 100
+                    count_with_mot = (mot_values == 1).sum()
+                    
+                    mot_comparison_data.append({
+                        "Label": label_name,
+                        "MOT Marker": mot_name,
+                        "% with MOT = 1": pct_with_mot,
+                        "Calls with MOT = 1": count_with_mot,
+                        "Total Calls": call_count
+                    })
+
+    # create dataframe for visualization
+    if mot_comparison_data:
+        mot_df = pd.DataFrame(mot_comparison_data)
+        
+        # build color scale for the 4 MOT markers
+        color_scale = build_global_color_scale(list(mot_columns.keys()))
+        
+        # create vertical grouped bar chart
+        chart = (
+            alt.Chart(mot_df)
+            .mark_bar()
+            .encode(
+                x=alt.X("Label:N", 
+                       sort=comparison_labels,
+                       title="Label",
+                       axis=alt.Axis(labelAngle=0)),
+                y=alt.Y("% with MOT = 1:Q", 
+                       title="% Calls MOT = RED in last week",
+                       scale=alt.Scale(domain=[0, 100])),
+                color=alt.Color("MOT Marker:N", 
+                               scale=color_scale,
+                               title="MOT Marker"),
+                tooltip=[
+                    alt.Tooltip("Label:N"),
+                    alt.Tooltip("MOT Marker:N"),
+                    alt.Tooltip("% with MOT = 1:Q", format=".1f", title="% with MOT = 1"),
+                    alt.Tooltip("Calls with MOT = 1:Q", format=",", title="Calls with MOT = 1"),
+                    alt.Tooltip("Total Calls:Q", format=",", title="Total Calls in Label")
+                ]
+            )
+            .properties(height=400)
+        )
+        
+        st.altair_chart(chart, width='stretch')
+        
+        # display summary table
+        st.write("\n\n")
+        st.caption("Summary: Percentage of calls in each label where each MOT marker went RED in the week prior to the call. Diagonal alignment (e.g., Wi-Fi Status label with Wi-Fi Status MOT) indicates correct matching.")
+        
+        # pivot for better display
+        pivot_df = mot_df.pivot(index="Label", columns="MOT Marker", values="% with MOT = 1")
+        pivot_df = pivot_df[list(mot_columns.keys())]  # ensure column order
+        pivot_df = pivot_df.reindex(comparison_labels)  # ensure row order
+        
+        # format as percentages
+        st.dataframe(
+            pivot_df.style.format("{:.1f}%"),
+            width='stretch'
+        )
+    else:
+        st.warning("No MOT marker data available for the selected labels.")
+
+    st.divider()
