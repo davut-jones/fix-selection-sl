@@ -478,8 +478,8 @@ def render_view(df_filtered):
                     mot_comparison_data.append({
                         "Label": label_name,
                         "MOT Marker": mot_name,
-                        "% with MOT = 1": pct_with_mot,
-                        "Calls with MOT = 1": count_with_mot,
+                        "% with MOT = RED": pct_with_mot,
+                        "Calls with MOT = RED": count_with_mot,
                         "Total Calls": call_count
                     })
 
@@ -499,7 +499,7 @@ def render_view(df_filtered):
                        sort=comparison_labels,
                        title="Label",
                        axis=alt.Axis(labelAngle=0)),
-                y=alt.Y("% with MOT = 1:Q", 
+                y=alt.Y("% with MOT = RED:Q", 
                        title="% Calls MOT = RED in last week",
                        scale=alt.Scale(domain=[0, 100])),
                 color=alt.Color("MOT Marker:N", 
@@ -508,8 +508,8 @@ def render_view(df_filtered):
                 tooltip=[
                     alt.Tooltip("Label:N"),
                     alt.Tooltip("MOT Marker:N"),
-                    alt.Tooltip("% with MOT = 1:Q", format=".1f", title="% with MOT = 1"),
-                    alt.Tooltip("Calls with MOT = 1:Q", format=",", title="Calls with MOT = 1"),
+                    alt.Tooltip("% with MOT = RED:Q", format=".1f", title="% with MOT = RED"),
+                    alt.Tooltip("Calls with MOT = RED:Q", format=",", title="Calls with MOT = RED"),
                     alt.Tooltip("Total Calls:Q", format=",", title="Total Calls in Label")
                 ]
             )
@@ -523,7 +523,7 @@ def render_view(df_filtered):
         st.caption("Summary: Percentage of calls in each label where each MOT marker went RED in the week prior to the call. Diagonal alignment (e.g., Wi-Fi Status label with Wi-Fi Status MOT) indicates correct matching.")
         
         # pivot for better display
-        pivot_df = mot_df.pivot(index="Label", columns="MOT Marker", values="% with MOT = 1")
+        pivot_df = mot_df.pivot(index="Label", columns="MOT Marker", values="% with MOT = RED")
         pivot_df = pivot_df[list(mot_columns.keys())]  # ensure column order
         pivot_df = pivot_df.reindex(comparison_labels)  # ensure row order
         
