@@ -156,7 +156,9 @@ def render_view(df_filtered):
     eng_to_llm_map = {
         "TT Broadband - No Sync": "Wi-Fi Status",
         "TT Broadband -  Connection Dropping out": "Unreliable Wi-Fi", ### do not remove invisible character ###
+        "TT Broadband - Intermittent Speed Slow": "Unreliable Wi-Fi",
         "TT Broadband - Slow Speed": "Slow Wi-Fi",
+        "TT Broadband - Intermittent Speed Slow": "Slow Wi-Fi",
     }
     df_working["mapped_llm_label_eng"] = df_working["engineer_reported_symptom"].map(eng_to_llm_map)
 
