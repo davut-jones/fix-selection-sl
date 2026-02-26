@@ -25,11 +25,11 @@
 - [x] Add confidence score selection to the grid
 - [x] Add % selected outcome
 - [x] Add all metrics to export button, clean up naming
+- [x] Refresh data
 
 
 ## Backlog
 
-- [ ] Refresh data
 - [ ] Add filter for suggested outcome for selected outcome view
 - [ ] Add filter for selected outcome for suggested outcome view
 - [ ] Add final outcome percentage - highlight potential danger of using this

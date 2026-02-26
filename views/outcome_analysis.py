@@ -32,6 +32,22 @@ def render_view(df_filtered):
     df_working["sc_call_next_7d_flag"] = pd.to_numeric(df_working["sc_call_next_7d_flag"], errors="coerce")
     df_working["bb_churn_next_30d"] = pd.to_numeric(df_working["bb_churn_next_30d"], errors="coerce")
 
+    # minimum call threshold control
+    st.subheader("Data Quality Filter")
+    st.write("\n\n")
+    with st.expander("Select minimum call volume", expanded=False):
+        st.caption("Label/outcome combinations with fewer calls than this threshold will be excluded from all analyses on this page to ensure statistical reliability.")
+        min_call_threshold = st.slider(
+            "Minimum calls per label/outcome combination:",
+            min_value=0,
+            max_value=500,
+            value=100,
+            step=50,
+            key="min_call_threshold_outcome"
+        )
+    st.write("\n\n")
+    st.divider()
+
     ########################################
     ### section 1 - outcome distribution ###
     ########################################
@@ -45,7 +61,7 @@ def render_view(df_filtered):
     st.write("\n\n")
 
     # aggregate outcomes by label
-    df_grouped = (
+    df_grouped_raw = (
         df_working.groupby(["label", "selected_outcome_cleaned"])
         .agg(
             volume=("selected_outcome_cleaned", "size"),
@@ -56,6 +72,12 @@ def render_view(df_filtered):
         )
         .reset_index()
     )
+    
+    # filter out label/outcome combinations below threshold
+    combinations_before = len(df_grouped_raw)
+    df_grouped = df_grouped_raw[df_grouped_raw["volume"] >= min_call_threshold].copy()
+    combinations_after = len(df_grouped)
+    combinations_removed = combinations_before - combinations_after
 
     # calculate percentages
     df_grouped["pct_total_volume"] = df_grouped["volume"] / df_grouped["volume"].sum()
@@ -89,7 +111,7 @@ def render_view(df_filtered):
     )
 
     st.altair_chart(chart, width='stretch')
-    st.caption(f"{chart_df['volume'].sum():,} calls remaining after global filters applied")
+    st.caption(f"{chart_df['volume'].sum():,} calls remaining after global filters applied | {combinations_removed} label/outcome combination(s) removed (< {min_call_threshold} calls)")
     st.divider()
 
     #####################################
@@ -180,7 +202,7 @@ def render_view(df_filtered):
                 )
 
 
-    st.caption(f"{df_outcome_display['Calls'].sum():,} calls remaining after global filters applied")
+    st.caption(f"{df_outcome_display['Calls'].sum():,} calls remaining after global filters applied | {combinations_removed} label/outcome combination(s) removed (< {min_call_threshold} calls)")
     st.divider()
 
     ################################
@@ -189,13 +211,6 @@ def render_view(df_filtered):
 
     # section title
     st.subheader("Risk Tiering by Selected Outcome")
-
-    # info box
-    st.write("\n\n")
-    st.info(
-        "Outcomes ranked across three risk metrics: Repeat Call Rate (7d), BB Churn (30d), and Cost. Risk scores are calculated across all outcomes and labels. Adjust tier boundaries and metric weights to refine tiers."
-    )
-    st.write("\n\n")
 
     # apply confidence filter for this section
     # get confidence value from session state (will be set by slider widget below)
@@ -212,7 +227,7 @@ def render_view(df_filtered):
     ).astype(int)
     
     # recalculate grouped data with confidence filter applied
-    df_grouped_risk = (
+    df_grouped_risk_raw = (
         df_working_risk.groupby(["label", "selected_outcome_cleaned"])
         .agg(
             volume=("selected_outcome_cleaned", "size"),
@@ -224,6 +239,20 @@ def render_view(df_filtered):
         )
         .reset_index()
     )
+    
+    # filter out label/outcome combinations below threshold before calculating percentiles
+    risk_combinations_before = len(df_grouped_risk_raw)
+    df_grouped_risk = df_grouped_risk_raw[df_grouped_risk_raw["volume"] >= min_call_threshold]
+    risk_combinations_removed = risk_combinations_before - len(df_grouped_risk)
+
+    # info box
+    st.write("\n\n")
+    st.info(
+        "Outcomes ranked across three risk metrics: Repeat Call Rate (7d), BB Churn (30d), and Cost. Risk scores are calculated across all outcomes and labels. Adjust tier boundaries and metric weights to refine tiers."
+    )
+    # if risk_combinations_removed > 0:
+    #     st.warning(f"⚠️ {risk_combinations_removed} label/outcome combination(s) excluded from risk analysis (< {min_call_threshold} calls per combination)")
+    st.write("\n\n")
 
     # define reset callbacks
     def reset_weights():
@@ -464,6 +493,18 @@ def render_view(df_filtered):
         
         st.write("\n\n")
 
+    # confidence filter
+    with st.expander("Confidence filtering", expanded=False):
+        min_confidence = st.slider(
+            "Minimum LLM-derived confidence score:",
+            min_value=1,
+            max_value=10,
+            value=1,
+            key="outcome_analysis_confidence"
+        )
+        st.caption(f"{len(df_working_risk):,} calls remaining after confidence filter (≥{min_confidence})")
+    st.write("\n\n")
+
     # normalize weights to sum to 100%
     weight_sum = weight_repeat + weight_churn + weight_cost or 1
     w_repeat = weight_repeat / weight_sum
@@ -570,17 +611,21 @@ def render_view(df_filtered):
     )
     st.write("")
 
-    # confidence filter
-    with st.expander("Confidence filtering", expanded=False):
-        min_confidence = st.slider(
-            "Minimum LLM-derived confidence score:",
-            min_value=1,
-            max_value=10,
-            value=1,
-            key="outcome_analysis_confidence"
-        )
-        st.caption(f"{len(df_working_risk):,} calls remaining after confidence filter (≥{min_confidence})")
-    st.write("\n\n")
+    # outcome filter for suggested outcomes - get unique suggested outcomes for this label from the working data
+    df_working_risk_for_label = df_working_risk[
+        (df_working_risk["label"] == selected_label) & 
+        df_working_risk["suggested_outcome_cleaned"].notna()
+    ]
+    available_suggested_outcomes = sorted(df_working_risk_for_label["suggested_outcome_cleaned"].unique().tolist())
+    suggested_outcome_filter_options = ["ALL SUGGESTED OUTCOMES"] + available_suggested_outcomes
+    
+    suggested_outcome_filter = st.selectbox(
+        "Filter by suggested outcome:",
+        options=suggested_outcome_filter_options,
+        index=0,
+        key="risk_suggested_outcome_filter"
+    )
+    st.write("")
     
     # risk tier legend
     # centered display with color indicators
@@ -592,8 +637,105 @@ def render_view(df_filtered):
     st.markdown(legend_html, unsafe_allow_html=True)
     st.write("")
 
-    # filter risk data by selected label
-    display_df = risk_df[risk_df["Label"] == selected_label].sort_values("risk_pct", ascending=False)
+    # filter risk data by selected label and suggested outcome
+    # If a suggested outcome filter is applied, we need to recalculate the aggregations
+    # but keep percentiles based on the FULL dataset distribution
+    if suggested_outcome_filter != "ALL SUGGESTED OUTCOMES":
+        # Filter the working data by the suggested outcome
+        df_working_risk_filtered = df_working_risk[
+            (df_working_risk["label"] == selected_label) & 
+            (df_working_risk["suggested_outcome_cleaned"] == suggested_outcome_filter)
+        ]
+        
+        # Recalculate grouped data with the filtered data (still grouping by selected outcome)
+        df_grouped_risk_filtered_raw = (
+            df_working_risk_filtered.groupby(["label", "selected_outcome_cleaned"])
+            .agg(
+                volume=("selected_outcome_cleaned", "size"),
+                repeat_rate_7d=("sc_call_next_7d_flag", "mean"),
+                churn_rate_30d=("bb_churn_next_30d", "mean"),
+                avg_outcome_cost=("outcome_cost", "mean"),
+                total_outcome_cost=("outcome_cost", "sum"),
+                suggested_rate=("is_suggested", "mean"),
+            )
+            .reset_index()
+        )
+        
+        # Filter out label/outcome combinations below threshold
+        df_grouped_risk_filtered = df_grouped_risk_filtered_raw[
+            df_grouped_risk_filtered_raw["volume"] >= min_call_threshold
+        ]
+        
+        # Build risk dataframe with NEW metrics but OLD percentile scores from full dataset
+        risk_df_filtered = df_grouped_risk_filtered.copy().rename(columns={
+            "label": "Label",
+            "selected_outcome_cleaned": "Outcome",
+            "repeat_rate_7d": "Repeat Call Rate (7d)",
+            "churn_rate_30d": "BB Churn Rate (30d)",
+            "avg_outcome_cost": "Avg. Outcome Cost (£)"
+        })
+        
+        # Map the new metric values to the original percentile distribution from risk_df
+        # Use scipy's percentileofscore to find where each value falls in the original distribution
+        from scipy import stats
+        
+        # Get original distributions from the full risk_df for this label
+        original_full = risk_df[risk_df["Label"] == selected_label].copy()
+        
+        # Calculate percentile scores by finding where each filtered value ranks in the original distribution
+        risk_df_filtered["repeat_score"] = risk_df_filtered["Repeat Call Rate (7d)"].apply(
+            lambda x: stats.percentileofscore(original_full["Repeat Call Rate (7d)"], x, kind='rank')
+        ).round(0)
+        risk_df_filtered["churn_score"] = risk_df_filtered["BB Churn Rate (30d)"].apply(
+            lambda x: stats.percentileofscore(original_full["BB Churn Rate (30d)"], x, kind='rank')
+        ).round(0)
+        risk_df_filtered["cost_score"] = risk_df_filtered["Avg. Outcome Cost (£)"].apply(
+            lambda x: stats.percentileofscore(original_full["Avg. Outcome Cost (£)"], x, kind='rank')
+        ).round(0)
+        
+        # Calculate weighted overall risk score using the mapped percentiles
+        risk_df_filtered["risk_score"] = np.floor(
+            (risk_df_filtered["repeat_score"] * w_repeat) +
+            (risk_df_filtered["churn_score"] * w_churn) +
+            (risk_df_filtered["cost_score"] * w_cost)
+        ).astype(int)
+        
+        # Convert scores to percentage format
+        risk_df_filtered["risk_pct"] = risk_df_filtered["risk_score"]
+        risk_df_filtered["repeat_pct"] = risk_df_filtered["repeat_score"]
+        risk_df_filtered["churn_pct"] = risk_df_filtered["churn_score"]
+        risk_df_filtered["cost_pct"] = risk_df_filtered["cost_score"]
+        
+        # Categorize into tiers using the same boundaries as the full dataset
+        risk_df_filtered["risk_tier"] = pd.cut(
+            risk_df_filtered["risk_pct"],
+            bins=[0, avg_low, avg_med, 100],
+            labels=["Low", "Medium", "High"],
+            include_lowest=True
+        )
+        risk_df_filtered["repeat_tier"] = pd.cut(
+            risk_df_filtered["repeat_pct"],
+            bins=[0, repeat_low_val, repeat_med_val, 100],
+            labels=["Low", "Medium", "High"],
+            include_lowest=True
+        )
+        risk_df_filtered["churn_tier"] = pd.cut(
+            risk_df_filtered["churn_pct"],
+            bins=[0, churn_low_val, churn_med_val, 100],
+            labels=["Low", "Medium", "High"],
+            include_lowest=True
+        )
+        risk_df_filtered["cost_tier"] = pd.cut(
+            risk_df_filtered["cost_pct"],
+            bins=[0, cost_low_val, cost_med_val, 100],
+            labels=["Low", "Medium", "High"],
+            include_lowest=True
+        )
+        
+        display_df = risk_df_filtered.sort_values("risk_pct", ascending=False)
+    else:
+        # Use the full risk_df filtered by label only
+        display_df = risk_df[risk_df["Label"] == selected_label].sort_values("risk_pct", ascending=False)
 
     # display overall risk score boundaries
     st.markdown(f"<div style='font-size: 16px; color: #666;'><b>Overall Risk Score boundaries:</b> Low → Med = <b>{avg_low:.0f}</b> | Med → High = <b>{avg_med:.0f}</b></div>", unsafe_allow_html=True)
@@ -681,13 +823,13 @@ def render_view(df_filtered):
 
     # footnote for small sample sizes
     # displayed when outcomes have fewer than 250 calls
-    if (display_df["volume"] < 250).any():
-        st.markdown(
-            "<div style='text-align: right; font-size: 12px; opacity: 0.7; margin-top: 8px;'>"
-            "<span style='color: #666;'>* Small sample size (less than 250 calls) — use with caution</span>"
-            "</div>",
-            unsafe_allow_html=True
-        )
+    # if (display_df["volume"] < 250).any():
+    #     st.markdown(
+    #         "<div style='text-align: right; font-size: 12px; opacity: 0.7; margin-top: 8px;'>"
+    #         "<span style='color: #666;'>* Small sample size (less than 250 calls) — use with caution</span>"
+    #         "</div>",
+    #         unsafe_allow_html=True
+    #     )
 
     # export risk scores to csv
     export_df = display_df[[
@@ -758,13 +900,6 @@ def render_view(df_filtered):
     # section title
     st.subheader("Risk Tiering by Suggested Outcome")
 
-    # info box
-    st.write("\n\n")
-    st.info(
-        "Outcomes ranked across three risk metrics: Repeat Call Rate (7d), BB Churn (30d), and Cost. Risk scores are calculated across all outcomes and labels. Adjust tier boundaries and metric weights to refine tiers."
-    )
-    st.write("\n\n")
-
     # apply confidence filter for this section
     # get confidence value from session state (will be set by slider widget below)
     min_confidence_suggested = st.session_state.get("outcome_analysis_confidence_suggested", 1)
@@ -780,7 +915,7 @@ def render_view(df_filtered):
     ).astype(int)
     
     # recalculate grouped data with confidence filter applied - group by suggested outcome
-    df_grouped_risk_suggested = (
+    df_grouped_risk_suggested_raw = (
         df_working_risk_suggested.groupby(["label", "suggested_outcome_cleaned"])
         .agg(
             volume=("suggested_outcome_cleaned", "size"),
@@ -792,6 +927,20 @@ def render_view(df_filtered):
         )
         .reset_index()
     )
+    
+    # filter out label/outcome combinations below threshold before calculating percentiles
+    risk_suggested_combinations_before = len(df_grouped_risk_suggested_raw)
+    df_grouped_risk_suggested = df_grouped_risk_suggested_raw[df_grouped_risk_suggested_raw["volume"] >= min_call_threshold]
+    risk_suggested_combinations_removed = risk_suggested_combinations_before - len(df_grouped_risk_suggested)
+
+    # info box
+    st.write("\n\n")
+    st.info(
+        "Outcomes ranked across three risk metrics: Repeat Call Rate (7d), BB Churn (30d), and Cost. Risk scores are calculated across all outcomes and labels. Adjust tier boundaries and metric weights to refine tiers."
+    )
+    # if risk_suggested_combinations_removed > 0:
+    #     st.warning(f"⚠️ {risk_suggested_combinations_removed} label/outcome combination(s) excluded from risk analysis (< {min_call_threshold} calls per combination)")
+    st.write("\n\n")
 
     # pre-calculate scores for boundary reference (before expander)
     temp_risk_df_suggested = df_grouped_risk_suggested.copy().rename(columns={
@@ -1028,6 +1177,18 @@ def render_view(df_filtered):
         
         st.write("\n\n")
 
+    # confidence filter
+    with st.expander("Confidence filtering", expanded=False):
+        min_confidence_suggested = st.slider(
+            "Minimum LLM-derived confidence score:",
+            min_value=1,
+            max_value=10,
+            value=1,
+            key="outcome_analysis_confidence_suggested"
+        )
+        st.caption(f"{len(df_working_risk_suggested):,} calls remaining after confidence filter (≥{min_confidence_suggested})")
+    st.write("\n\n")
+
     # normalize weights to sum to 100%
     weight_sum_suggested = weight_repeat_suggested + weight_churn_suggested + weight_cost_suggested or 1
     w_repeat_suggested = weight_repeat_suggested / weight_sum_suggested
@@ -1116,17 +1277,22 @@ def render_view(df_filtered):
     )
     st.write("")
 
-    # confidence filter
-    with st.expander("Confidence filtering", expanded=False):
-        min_confidence_suggested = st.slider(
-            "Minimum LLM-derived confidence score:",
-            min_value=1,
-            max_value=10,
-            value=1,
-            key="outcome_analysis_confidence_suggested"
-        )
-        st.caption(f"{len(df_working_risk_suggested):,} calls remaining after confidence filter (≥{min_confidence_suggested})")
-    st.write("\n\n")
+    # outcome filter for selected outcomes - filter by label first to get relevant selected outcomes from the working data
+    # We need to get the unique selected outcomes for this label from the working data
+    df_working_risk_suggested_for_label = df_working_risk_suggested[
+        (df_working_risk_suggested["label"] == selected_label_suggested) & 
+        df_working_risk_suggested["selected_outcome_cleaned"].notna()
+    ]
+    available_selected_outcomes = sorted(df_working_risk_suggested_for_label["selected_outcome_cleaned"].unique().tolist())
+    selected_outcome_filter_options = ["ALL SELECTED OUTCOMES"] + available_selected_outcomes
+    
+    selected_outcome_filter_suggested = st.selectbox(
+        "Filter by selected outcome:",
+        options=selected_outcome_filter_options,
+        index=0,
+        key="risk_selected_outcome_filter_suggested"
+    )
+    st.write("")
     
     # risk tier legend
     # centered display with color indicators
@@ -1139,7 +1305,104 @@ def render_view(df_filtered):
     st.write("")
 
     # filter risk data by selected label
-    display_df_suggested = risk_df_suggested[risk_df_suggested["Label"] == selected_label_suggested].sort_values("risk_pct", ascending=False)
+    # First, we need to recalculate the aggregated data based on the selected outcome filter
+    # but keep percentiles based on the FULL dataset distribution
+    if selected_outcome_filter_suggested != "ALL SELECTED OUTCOMES":
+        # Filter the working data by the selected outcome
+        df_working_risk_suggested_filtered = df_working_risk_suggested[
+            (df_working_risk_suggested["label"] == selected_label_suggested) & 
+            (df_working_risk_suggested["selected_outcome_cleaned"] == selected_outcome_filter_suggested)
+        ]
+        
+        # Recalculate grouped data with the filtered data
+        df_grouped_risk_suggested_filtered_raw = (
+            df_working_risk_suggested_filtered.groupby(["label", "suggested_outcome_cleaned"])
+            .agg(
+                volume=("suggested_outcome_cleaned", "size"),
+                repeat_rate_7d=("sc_call_next_7d_flag", "mean"),
+                churn_rate_30d=("bb_churn_next_30d", "mean"),
+                avg_outcome_cost=("outcome_cost", "mean"),
+                total_outcome_cost=("outcome_cost", "sum"),
+                selected_rate=("is_selected", "mean"),
+            )
+            .reset_index()
+        )
+        
+        # Filter out label/outcome combinations below threshold
+        df_grouped_risk_suggested_filtered = df_grouped_risk_suggested_filtered_raw[
+            df_grouped_risk_suggested_filtered_raw["volume"] >= min_call_threshold
+        ]
+        
+        # Build risk dataframe with NEW metrics but OLD percentile scores from full dataset
+        risk_df_suggested_filtered = df_grouped_risk_suggested_filtered.copy().rename(columns={
+            "label": "Label",
+            "suggested_outcome_cleaned": "Outcome",
+            "repeat_rate_7d": "Repeat Call Rate (7d)",
+            "churn_rate_30d": "BB Churn Rate (30d)",
+            "avg_outcome_cost": "Avg. Outcome Cost (£)"
+        })
+        
+        # Map the new metric values to the original percentile distribution from risk_df_suggested
+        # Use scipy's percentileofscore to find where each value falls in the original distribution
+        from scipy import stats
+        
+        # Get original distributions from the full risk_df_suggested for this label
+        original_full_suggested = risk_df_suggested[risk_df_suggested["Label"] == selected_label_suggested].copy()
+        
+        # Calculate percentile scores by finding where each filtered value ranks in the original distribution
+        risk_df_suggested_filtered["repeat_score"] = risk_df_suggested_filtered["Repeat Call Rate (7d)"].apply(
+            lambda x: stats.percentileofscore(original_full_suggested["Repeat Call Rate (7d)"], x, kind='rank')
+        ).round(0)
+        risk_df_suggested_filtered["churn_score"] = risk_df_suggested_filtered["BB Churn Rate (30d)"].apply(
+            lambda x: stats.percentileofscore(original_full_suggested["BB Churn Rate (30d)"], x, kind='rank')
+        ).round(0)
+        risk_df_suggested_filtered["cost_score"] = risk_df_suggested_filtered["Avg. Outcome Cost (£)"].apply(
+            lambda x: stats.percentileofscore(original_full_suggested["Avg. Outcome Cost (£)"], x, kind='rank')
+        ).round(0)
+        
+        # Calculate weighted overall risk score using the mapped percentiles
+        risk_df_suggested_filtered["risk_score"] = np.floor(
+            (risk_df_suggested_filtered["repeat_score"] * w_repeat_suggested) +
+            (risk_df_suggested_filtered["churn_score"] * w_churn_suggested) +
+            (risk_df_suggested_filtered["cost_score"] * w_cost_suggested)
+        ).astype(int)
+        
+        # Convert scores to percentage format
+        risk_df_suggested_filtered["risk_pct"] = risk_df_suggested_filtered["risk_score"]
+        risk_df_suggested_filtered["repeat_pct"] = risk_df_suggested_filtered["repeat_score"]
+        risk_df_suggested_filtered["churn_pct"] = risk_df_suggested_filtered["churn_score"]
+        risk_df_suggested_filtered["cost_pct"] = risk_df_suggested_filtered["cost_score"]
+        
+        # Categorize into tiers using the same boundaries as the full dataset
+        risk_df_suggested_filtered["risk_tier"] = pd.cut(
+            risk_df_suggested_filtered["risk_pct"],
+            bins=[0, avg_low_suggested, avg_med_suggested, 100],
+            labels=["Low", "Medium", "High"],
+            include_lowest=True
+        )
+        risk_df_suggested_filtered["repeat_tier"] = pd.cut(
+            risk_df_suggested_filtered["repeat_pct"],
+            bins=[0, repeat_low_val_suggested, repeat_med_val_suggested, 100],
+            labels=["Low", "Medium", "High"],
+            include_lowest=True
+        )
+        risk_df_suggested_filtered["churn_tier"] = pd.cut(
+            risk_df_suggested_filtered["churn_pct"],
+            bins=[0, churn_low_val_suggested, churn_med_val_suggested, 100],
+            labels=["Low", "Medium", "High"],
+            include_lowest=True
+        )
+        risk_df_suggested_filtered["cost_tier"] = pd.cut(
+            risk_df_suggested_filtered["cost_pct"],
+            bins=[0, cost_low_val_suggested, cost_med_val_suggested, 100],
+            labels=["Low", "Medium", "High"],
+            include_lowest=True
+        )
+        
+        display_df_suggested = risk_df_suggested_filtered.sort_values("risk_pct", ascending=False)
+    else:
+        # Use the full risk_df_suggested filtered by label only
+        display_df_suggested = risk_df_suggested[risk_df_suggested["Label"] == selected_label_suggested].sort_values("risk_pct", ascending=False)
 
     # display overall risk score boundaries
     st.markdown(f"<div style='font-size: 16px; color: #666;'><b>Overall Risk Score boundaries:</b> Low → Med = <b>{avg_low_suggested:.0f}</b> | Med → High = <b>{avg_med_suggested:.0f}</b></div>", unsafe_allow_html=True)
@@ -1227,13 +1490,13 @@ def render_view(df_filtered):
 
     # footnote for small sample sizes
     # displayed when outcomes have fewer than 250 calls
-    if (display_df_suggested["volume"] < 250).any():
-        st.markdown(
-            "<div style='text-align: right; font-size: 12px; opacity: 0.7; margin-top: 8px;'>"
-            "<span style='color: #666;'>* Small sample size (less than 250 calls) — use with caution</span>"
-            "</div>",
-            unsafe_allow_html=True
-        )
+    # if (display_df_suggested["volume"] < 250).any():
+    #     st.markdown(
+    #         "<div style='text-align: right; font-size: 12px; opacity: 0.7; margin-top: 8px;'>"
+    #         "<span style='color: #666;'>* Small sample size (less than 250 calls) — use with caution</span>"
+    #         "</div>",
+    #         unsafe_allow_html=True
+    #     )
 
     # export risk scores to csv
     export_df_suggested = display_df_suggested[[

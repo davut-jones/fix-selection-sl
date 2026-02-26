@@ -4,7 +4,7 @@
 
 # standard python imports
 import streamlit as st
-from streamlit_option_menu import option_menu
+from streamlit_option_menu import option_menu # pyright: ignore[reportMissingImports]
 import pandas as pd
 
 # customer streamlit views
@@ -43,7 +43,7 @@ st.markdown(
 @st.cache_data
 def load_label_data():
     df = pd.read_csv(
-        "data/hub4_lhc_green_reduced_cols.csv",
+        "data/hub4_final_outcome_7d_202506_202602.csv",
         dtype={
             "other_label": "string",
             "engineer_reported_cause": "string",
