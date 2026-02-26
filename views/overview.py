@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
+from utils.colours import build_global_color_scale
 
 def render_view(df_filtered):
 
@@ -146,12 +147,13 @@ def render_view(df_filtered):
 
         split_choice = col_split.selectbox(
             "Split by Label (optional):",
-            ["None"],
+            ["No", "Yes"],
             index=0,
             key="label_split_choice"
         )
 
         freq = "W" if grain_choice == "Weekly" else "M"
+        period_title = "Week Starting" if grain_choice == "Weekly" else "Month Starting"
 
         df_time = df_filtered.copy()
         df_time["period"] = (
@@ -160,9 +162,13 @@ def render_view(df_filtered):
             .dt.start_time
         )
 
-        # aggregation
+        # aggregation - group by split field if selected
+        group_cols = ["period"]
+        if split_choice == "Yes":
+            group_cols.append("label")
+        
         df_agg = (
-            df_time.groupby("period")
+            df_time.groupby(group_cols)
             .agg(
                 volume=("label", "size"),
                 avg_outcome_cost=("outcome_cost", "mean"),
@@ -204,48 +210,106 @@ def render_view(df_filtered):
             ".1%" if is_rate else ",.0f"
         )
 
-        # line
-        line = (
-            alt.Chart(df_agg)
-            .mark_line(
-                strokeWidth=3,
-                color=line_color,
-                interpolate="monotone"
-            )
-            .encode(
-                x=alt.X(
-                    "period:T",
-                    title=None,
-                    axis=alt.Axis(format="%d %b")
-                ),
-                y=alt.Y(
+        # build chart encoding based on split choice
+        if split_choice == "Yes":
+            # get unique labels for color scale
+            available_labels = sorted(df_agg["label"].dropna().unique().tolist())
+            color_scale = build_global_color_scale(available_labels)
+            
+            tooltips = [
+                alt.Tooltip("period:T", title=period_title),
+                alt.Tooltip("label:N", title="Label"),
+                alt.Tooltip("volume:Q", title="Calls", format=",.0f"),
+                alt.Tooltip(
                     f"{y_col_map[metric_choice]}:Q",
-                    axis=y_axis
+                    title=metric_choice,
+                    format=tooltip_format
                 ),
-                tooltip=[
-                    alt.Tooltip("period:T", title="Period"),
-                    alt.Tooltip(
-                        f"{y_col_map[metric_choice]}:Q",
-                        title=metric_choice,
-                        format=tooltip_format
+            ]
+            
+            # line with color by label
+            line = (
+                alt.Chart(df_agg)
+                .mark_line(
+                    strokeWidth=3,
+                    interpolate="monotone"
+                )
+                .encode(
+                    x=alt.X(
+                        "period:T",
+                        title=None,
+                        axis=alt.Axis(format="%d %b")
                     ),
-                ],
+                    y=alt.Y(
+                        f"{y_col_map[metric_choice]}:Q",
+                        axis=y_axis
+                    ),
+                    color=alt.Color("label:N", scale=color_scale, legend=alt.Legend(title="Label")),
+                    tooltip=tooltips,
+                )
             )
-        )
 
-        # solid points
-        points = (
-            alt.Chart(df_agg)
-            .mark_point(
-                filled=True,
-                size=60,
-                color=point_color
+            # points with color by label
+            points = (
+                alt.Chart(df_agg)
+                .mark_point(
+                    filled=True,
+                    size=60
+                )
+                .encode(
+                    x="period:T",
+                    y=f"{y_col_map[metric_choice]}:Q",
+                    color=alt.Color("label:N", scale=color_scale, legend=None),
+                    tooltip=tooltips,
+                )
             )
-            .encode(
-                x="period:T",
-                y=f"{y_col_map[metric_choice]}:Q",
+        else:
+            # single line with fixed color (no split)
+            tooltips = [
+                alt.Tooltip("period:T", title=period_title),
+                alt.Tooltip("volume:Q", title="Calls", format=",.0f"),
+                alt.Tooltip(
+                    f"{y_col_map[metric_choice]}:Q",
+                    title=metric_choice,
+                    format=tooltip_format
+                ),
+            ]
+            
+            line = (
+                alt.Chart(df_agg)
+                .mark_line(
+                    strokeWidth=3,
+                    color=line_color,
+                    interpolate="monotone"
+                )
+                .encode(
+                    x=alt.X(
+                        "period:T",
+                        title=None,
+                        axis=alt.Axis(format="%d %b")
+                    ),
+                    y=alt.Y(
+                        f"{y_col_map[metric_choice]}:Q",
+                        axis=y_axis
+                    ),
+                    tooltip=tooltips,
+                )
             )
-        )
+
+            # solid points
+            points = (
+                alt.Chart(df_agg)
+                .mark_point(
+                    filled=True,
+                    size=60,
+                    color=point_color
+                )
+                .encode(
+                    x="period:T",
+                    y=f"{y_col_map[metric_choice]}:Q",
+                    tooltip=tooltips,
+                )
+            )
 
         st.write("\n\n")
         st.write("\n\n")
@@ -333,20 +397,32 @@ def render_view(df_filtered):
             index=0,
             key="outcome_grain_choice"
         )
+        
         split_choice = col_split.selectbox(
             "Split by Outcome (optional):",
-            ["None"],
+            ["No", "Yes - with INCOMPLETE", "Yes - without INCOMPLETE"],
             index=0,
             key="outcome_split_choice"
         )
 
         freq = "W" if grain_choice == "Weekly" else "M"
+        period_title_outcome = "Week Starting" if grain_choice == "Weekly" else "Month Starting"
 
         df_time = df_filtered.copy()
+        
+        # filter out INCOMPLETE if requested
+        if split_choice == "Yes - without INCOMPLETE":
+            df_time = df_time[df_time["selected_outcome_cleaned"] != "INCOMPLETE"]
+        
         df_time["period"] = df_time["call_date"].dt.to_period(freq).dt.start_time
 
+        # aggregation - group by split field if selected
+        group_cols_outcome = ["period"]
+        if split_choice.startswith("Yes"):
+            group_cols_outcome.append("selected_outcome_cleaned")
+        
         df_agg = (
-            df_time.groupby("period")
+            df_time.groupby(group_cols_outcome)
             .agg(
                 volume=("selected_outcome_cleaned", "size"),
                 avg_outcome_cost=("outcome_cost", "mean"),
@@ -385,49 +461,100 @@ def render_view(df_filtered):
             else ".1%"
         )
 
-        # line
-        line = (
-            alt.Chart(df_agg)
-            .mark_line(
-                strokeWidth=3,
-                color=line_color,
-                interpolate="monotone"
-            )
-            .encode(
-                x=alt.X("period:T", title=None, axis=alt.Axis(format="%d %b")),
-                y=alt.Y(f"{y_col_map[metric_choice]}:Q", axis=y_axis),
-                tooltip=[
-                    alt.Tooltip("period:T", title="Period"),
-                    alt.Tooltip(
-                        f"{y_col_map[metric_choice]}:Q",
-                        title=metric_choice,
-                        format=tooltip_format,
+        # build chart encoding based on split choice
+        if split_choice.startswith("Yes"):
+            # get unique outcomes for color scale
+            available_outcomes = sorted(df_agg["selected_outcome_cleaned"].dropna().unique().tolist())
+            color_scale_outcome = build_global_color_scale(available_outcomes)
+            
+            tooltips_outcome = [
+                alt.Tooltip("period:T", title=period_title_outcome),
+                alt.Tooltip("selected_outcome_cleaned:N", title="Outcome"),
+                alt.Tooltip("volume:Q", title="Calls", format=",.0f"),
+                alt.Tooltip(
+                    f"{y_col_map[metric_choice]}:Q",
+                    title=metric_choice,
+                    format=tooltip_format,
+                ),
+            ]
+            
+            # line with color by outcome
+            line = (
+                alt.Chart(df_agg)
+                .mark_line(
+                    strokeWidth=3,
+                    interpolate="monotone"
+                )
+                .encode(
+                    x=alt.X("period:T", title=None, axis=alt.Axis(format="%d %b")),
+                    y=alt.Y(f"{y_col_map[metric_choice]}:Q", axis=y_axis),
+                    color=alt.Color(
+                        "selected_outcome_cleaned:N",
+                        scale=color_scale_outcome,
+                        legend=alt.Legend(title="Outcome")
                     ),
-                ],
+                    tooltip=tooltips_outcome,
+                )
             )
-        )
 
-        # points
-        points = (
-            alt.Chart(df_agg)
-            .mark_point(
-                size=60,
-                color=line_color,
-                filled=True
-            )
-            .encode(
-                x="period:T",
-                y=f"{y_col_map[metric_choice]}:Q",
-                tooltip=[
-                    alt.Tooltip("period:T", title="Period"),
-                    alt.Tooltip(
-                        f"{y_col_map[metric_choice]}:Q",
-                        title=metric_choice,
-                        format=tooltip_format,
+            # points with color by outcome
+            points = (
+                alt.Chart(df_agg)
+                .mark_point(
+                    size=60,
+                    filled=True
+                )
+                .encode(
+                    x="period:T",
+                    y=f"{y_col_map[metric_choice]}:Q",
+                    color=alt.Color(
+                        "selected_outcome_cleaned:N",
+                        scale=color_scale_outcome,
+                        legend=None
                     ),
-                ],
+                    tooltip=tooltips_outcome,
+                )
             )
-        )
+        else:
+            # single line with fixed color (no split)
+            tooltips_outcome = [
+                alt.Tooltip("period:T", title=period_title_outcome),
+                alt.Tooltip("volume:Q", title="Calls", format=",.0f"),
+                alt.Tooltip(
+                    f"{y_col_map[metric_choice]}:Q",
+                    title=metric_choice,
+                    format=tooltip_format,
+                ),
+            ]
+            
+            line = (
+                alt.Chart(df_agg)
+                .mark_line(
+                    strokeWidth=3,
+                    color=line_color,
+                    interpolate="monotone"
+                )
+                .encode(
+                    x=alt.X("period:T", title=None, axis=alt.Axis(format="%d %b")),
+                    y=alt.Y(f"{y_col_map[metric_choice]}:Q", axis=y_axis),
+                    tooltip=tooltips_outcome,
+                )
+            )
+
+            # points
+            points = (
+                alt.Chart(df_agg)
+                .mark_point(
+                    size=60,
+                    color=line_color,
+                    filled=True
+                )
+                .encode(
+                    x="period:T",
+                    y=f"{y_col_map[metric_choice]}:Q",
+                    tooltip=tooltips_outcome,
+                )
+            )
 
         st.write("\n\n")
         st.write("\n\n")
