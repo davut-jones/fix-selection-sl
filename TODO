@@ -32,8 +32,8 @@
 - [ ] Refresh data
 - [ ] Add filter for suggested outcome for selected outcome view
 - [ ] Add filter for selected outcome for suggested outcome view
-- [ ] Add final outcome percentage - highlight potetial danger
-- [ ] Check for double counting of repeat calls
+- [ ] Add final outcome percentage - highlight potential danger of using this
+- [ ] Check for double counting of repeat calls or at least flag
 
 ### Next - Issue Prediction
 
