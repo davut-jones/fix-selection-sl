@@ -29,6 +29,12 @@
 
 ## Backlog
 
+- [ ] Refresh data
+- [ ] Add filter for suggested outcome for selected outcome view
+- [ ] Add filter for selected outcome for suggested outcome view
+- [ ] Add final outcome percentage - highlight potetial danger
+- [ ] Check for double counting of repeat calls
+
 ### Next - Issue Prediction
 
 - [ ] Feature clustering to confirm labels
