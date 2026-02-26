@@ -43,7 +43,7 @@ st.markdown(
 @st.cache_data
 def load_label_data():
     df = pd.read_csv(
-        "data/hub4_fix_selection_04_dashboard_csv_lhc_green_202506_202602_all.csv",
+        "data/hub4_lhc_green_reduced_cols.csv",
         dtype={
             "other_label": "string",
             "engineer_reported_cause": "string",

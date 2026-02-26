@@ -18,7 +18,7 @@ def render_view(df_filtered):
     ###############################
 
     # ensure numeric
-    numeric_cols = ["outcome_cost", "sc_call_next_7d_flag", "bb_churn_next_30d", "bb_churn_next_60d"]
+    numeric_cols = ["outcome_cost", "sc_call_next_7d_flag", "bb_churn_next_30d"]
     for col in numeric_cols:
         df_filtered[col] = pd.to_numeric(df_filtered[col], errors="coerce")
 

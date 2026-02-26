@@ -524,12 +524,12 @@ def render_view(df_filtered):
         
         # pivot for better display
         pivot_df = mot_df.pivot(index="Label", columns="MOT Marker", values="% with MOT = RED")
-        pivot_df = pivot_df[list(mot_columns.keys())]  # ensure column order
+        pivot_df = pivot_df.reindex(columns=list(mot_columns.keys()))  # ensure column order
         pivot_df = pivot_df.reindex(comparison_labels)  # ensure row order
         
         # format as percentages
         st.dataframe(
-            pivot_df.style.format("{:.1f}%"),
+            pivot_df.style.format("{:.1f}%", na_rep="-"),
             width='stretch'
         )
     else:

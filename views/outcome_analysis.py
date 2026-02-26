@@ -31,7 +31,6 @@ def render_view(df_filtered):
     df_working["outcome_cost"] = pd.to_numeric(df_working["outcome_cost"], errors="coerce")
     df_working["sc_call_next_7d_flag"] = pd.to_numeric(df_working["sc_call_next_7d_flag"], errors="coerce")
     df_working["bb_churn_next_30d"] = pd.to_numeric(df_working["bb_churn_next_30d"], errors="coerce")
-    df_working["bb_churn_next_60d"] = pd.to_numeric(df_working["bb_churn_next_60d"], errors="coerce")
 
     ########################################
     ### section 1 - outcome distribution ###
@@ -52,7 +51,6 @@ def render_view(df_filtered):
             volume=("selected_outcome_cleaned", "size"),
             repeat_rate_7d=("sc_call_next_7d_flag", "mean"),
             churn_rate_30d=("bb_churn_next_30d", "mean"),
-            churn_rate_60d=("bb_churn_next_60d", "mean"),
             avg_outcome_cost=("outcome_cost", "mean"),
             total_outcome_cost=("outcome_cost", "sum"),
         )
@@ -220,7 +218,6 @@ def render_view(df_filtered):
             volume=("selected_outcome_cleaned", "size"),
             repeat_rate_7d=("sc_call_next_7d_flag", "mean"),
             churn_rate_30d=("bb_churn_next_30d", "mean"),
-            churn_rate_60d=("bb_churn_next_60d", "mean"),
             avg_outcome_cost=("outcome_cost", "mean"),
             total_outcome_cost=("outcome_cost", "sum"),
             suggested_rate=("is_suggested", "mean"),
@@ -316,15 +313,15 @@ def render_view(df_filtered):
         
         # Validation checks with full metric names
         if repeat_low >= repeat_med:
-            st.error("Repeat Call Rate (7d): Low boundary must be lower than Med boundary.")
+            st.error("Repeat Call Rate (7d): Low-Med boundary must be lower than Med-High boundary.")
             st.stop()
         
         if churn_low >= churn_med:
-            st.error("BB Churn Rate (30d): Low boundary must be lower than Med boundary.")
+            st.error("BB Churn Rate (30d): Low-Med boundary must be lower than Med-High boundary.")
             st.stop()
         
         if cost_low >= cost_med:
-            st.error("Avg. Outcome Cost (£): Low boundary must be lower than Med boundary.")
+            st.error("Avg. Outcome Cost (£): Low-Med boundary must be lower than Med-High boundary.")
             st.stop()
         
         st.write("")
@@ -789,7 +786,6 @@ def render_view(df_filtered):
             volume=("suggested_outcome_cleaned", "size"),
             repeat_rate_7d=("sc_call_next_7d_flag", "mean"),
             churn_rate_30d=("bb_churn_next_30d", "mean"),
-            churn_rate_60d=("bb_churn_next_60d", "mean"),
             avg_outcome_cost=("outcome_cost", "mean"),
             total_outcome_cost=("outcome_cost", "sum"),
             selected_rate=("is_selected", "mean"),
@@ -875,15 +871,15 @@ def render_view(df_filtered):
         
         # Validation checks with full metric names
         if repeat_low_suggested >= repeat_med_suggested:
-            st.error("Repeat Call Rate (7d): Low boundary must be lower than Med boundary.")
+            st.error("Repeat Call Rate (7d): Low-Med boundary must be lower than Med-High boundary.")
             st.stop()
         
         if churn_low_suggested >= churn_med_suggested:
-            st.error("BB Churn Rate (30d): Low boundary must be lower than Med boundary.")
+            st.error("BB Churn Rate (30d): Low-Med boundary must be lower than Med-High boundary.")
             st.stop()
         
         if cost_low_suggested >= cost_med_suggested:
-            st.error("Avg. Outcome Cost (£): Low boundary must be lower than Med boundary.")
+            st.error("Avg. Outcome Cost (£): Low-Med boundary must be lower than Med-High boundary.")
             st.stop()
         
         st.write("")
