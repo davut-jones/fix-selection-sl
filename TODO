@@ -28,11 +28,12 @@
 - [x] Refresh data
 - [x] Add filter for suggested outcome for selected outcome view
 - [x] Add filter for selected outcome for suggested outcome view
+- [x] Add final outcome percentage - highlight potential danger of using this
 
 
 ## Backlog
 
-- [ ] Add final outcome percentage - highlight potential danger of using this
+- [ ] Consider the relationship between repeat calls and final outcome - how do they compare?
 - [ ] Check for double counting of repeat calls or at least flag
 
 ### Next - Issue Prediction

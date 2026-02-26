@@ -226,6 +226,11 @@ def render_view(df_filtered):
         df_working_risk["selected_outcome_cleaned"] == df_working_risk["suggested_outcome_cleaned"]
     ).astype(int)
     
+    # calculate final indicator (where selected == latest_selected_outcome_7d)
+    df_working_risk["is_final"] = (
+        df_working_risk["selected_outcome_cleaned"] == df_working_risk["latest_selected_outcome_7d"]
+    ).astype(int)
+    
     # recalculate grouped data with confidence filter applied
     df_grouped_risk_raw = (
         df_working_risk.groupby(["label", "selected_outcome_cleaned"])
@@ -236,6 +241,7 @@ def render_view(df_filtered):
             avg_outcome_cost=("outcome_cost", "mean"),
             total_outcome_cost=("outcome_cost", "sum"),
             suggested_rate=("is_suggested", "mean"),
+            final_rate=("is_final", "mean"),
         )
         .reset_index()
     )
@@ -657,6 +663,7 @@ def render_view(df_filtered):
                 avg_outcome_cost=("outcome_cost", "mean"),
                 total_outcome_cost=("outcome_cost", "sum"),
                 suggested_rate=("is_suggested", "mean"),
+                final_rate=("is_final", "mean"),
             )
             .reset_index()
         )
@@ -773,7 +780,8 @@ def render_view(df_filtered):
         with col_outcome:
             call_count = format_calls(row['volume'])
             suggested_pct = row.get('suggested_rate', 0) * 100
-            st.markdown(f"<div style='font-size: 16px;'><b>{row['Outcome']}</b> ({call_count} calls, {suggested_pct:.0f}% suggested)</div>", unsafe_allow_html=True)
+            final_pct = row.get('final_rate', 0) * 100
+            st.markdown(f"<div style='font-size: 16px;'><b>{row['Outcome']}</b> ({call_count} calls, {suggested_pct:.0f}% suggested, {final_pct:.0f}% final)</div>", unsafe_allow_html=True)
         
         with col_cards:
             card_cols = st.columns(3, gap="small", vertical_alignment="center")
@@ -833,15 +841,16 @@ def render_view(df_filtered):
 
     # export risk scores to csv
     export_df = display_df[[
-        "Outcome", "volume", "suggested_rate",
+        "Outcome", "volume", "suggested_rate", "final_rate",
         "Repeat Call Rate (7d)", "repeat_pct", "repeat_tier", 
         "BB Churn Rate (30d)", "churn_pct", "churn_tier", 
         "Avg. Outcome Cost (£)", "cost_pct", "cost_tier", 
         "risk_pct", "risk_tier"
     ]].copy()
     
-    # calculate volume suggested
+    # calculate volume suggested and final
     export_df["volume_suggested"] = (export_df["volume"] * export_df["suggested_rate"]).round(0).astype(int)
+    export_df["volume_final"] = (export_df["volume"] * export_df["final_rate"]).round(0).astype(int)
     
     # round numeric columns
     export_df["Repeat Call Rate (7d)"] = export_df["Repeat Call Rate (7d)"].round(4)
@@ -852,12 +861,15 @@ def render_view(df_filtered):
     export_df["cost_pct"] = export_df["cost_pct"].round(0)
     export_df["risk_pct"] = export_df["risk_pct"].round(0)
     export_df["suggested_rate"] = export_df["suggested_rate"].round(4)
+    export_df["final_rate"] = export_df["final_rate"].round(4)
     
     export_df = export_df.rename(columns={
         "Outcome": "Outcome",
         "volume": "Call Volume",
         "volume_suggested": "Volume Suggested",
         "suggested_rate": "% Suggested",
+        "volume_final": "Volume Final",
+        "final_rate": "% Final",
         "Repeat Call Rate (7d)": "Repeat Call Rate",
         "repeat_pct": "Repeat Call Risk Score",
         "repeat_tier": "Repeat Call Risk Tier",
@@ -873,7 +885,7 @@ def render_view(df_filtered):
     
     # reorder columns to put Volume Suggested and % Suggested after Call Volume
     column_order = [
-        "Outcome", "Call Volume", "Volume Suggested", "% Suggested",
+        "Outcome", "Call Volume", "Volume Suggested", "% Suggested", "Volume Final", "% Final",
         "Repeat Call Rate", "Repeat Call Risk Score", "Repeat Call Risk Tier",
         "BB Churn Rate", "BB Churn Risk Score", "BB Churn Risk Tier",
         "Avg. Outcome Cost", "Cost Risk Score", "Cost Risk Tier",
