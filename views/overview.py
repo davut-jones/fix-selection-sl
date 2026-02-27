@@ -126,7 +126,7 @@ def render_view(df_filtered):
 
     if show_label_metrics:
 
-        st.write("*Call volumes will vary due to periods of good and poor transcription rates*")
+        st.write("*Call volumes will vary due to periods of good and poor transcription rates, churn not possible in last month*")
 
         # selectors: metric, grain, split
         col_metric, col_grain, col_split = st.columns(3)
@@ -381,7 +381,7 @@ def render_view(df_filtered):
 
     if show_outcome_metrics:
 
-        st.write("*Call volumes will vary due to periods of good and poor transcription rates*")
+        st.write("*Call volumes will vary due to periods of good and poor transcription rates, churn not possible in last month*")
 
         # default metric: Calls, grain: weekly, split by outcome optional
         col_metric, col_grain, col_split = st.columns(3)
