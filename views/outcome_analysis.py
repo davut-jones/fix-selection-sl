@@ -786,12 +786,20 @@ def render_view(df_filtered):
         with col_cards:
             card_cols = st.columns(3, gap="small", vertical_alignment="center")
             
+            # Calculate same outcome metric
+            R = row["Repeat Call Rate (7d)"]
+            F = row.get('final_rate', 0)
+            if R == 0:
+                same_outcome_pct = 1.0
+            else:
+                same_outcome_pct = (F - (1 - R)) / R
+            
             # repeat call risk card
             with card_cols[0]:
                 repeat_color = tier_color_map[row["repeat_tier"]]
                 st.markdown(
                     f'<div style="background-color: {repeat_color}; padding: 6px 4px; border-radius: 4px; text-align: center; color: white; height: 100%; display: flex; align-items: center; justify-content: center;">'
-                    f'<div style="font-size: 16px; font-weight: 700; line-height: 1.3;">{row["repeat_pct"]:.0f} <span style="font-weight: 400;">| {row["Repeat Call Rate (7d)"]:.1%}</span></div>'
+                    f'<div style="font-size: 16px; font-weight: 700; line-height: 1.3;">{row["repeat_pct"]:.0f} <span style="font-weight: 400;">| {row["Repeat Call Rate (7d)"]:.1%} ({same_outcome_pct:.0%} ↻)</span></div>'
                     f'</div>',
                     unsafe_allow_html=True
                 )

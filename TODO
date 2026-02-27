@@ -25,37 +25,31 @@
 - [x] Add confidence score selection to the grid
 - [x] Add % selected outcome
 - [x] Add all metrics to export button, clean up naming
-- [x] Refresh data
+- [x] Transcript cleaning and filtering pre-labelling (size only)
+- [x] Refresh data on all calls available
 - [x] Add filter for suggested outcome for selected outcome view
 - [x] Add filter for selected outcome for suggested outcome view
 - [x] Add final outcome percentage - highlight potential danger of using this
+- [x] Consider the relationship between repeat calls and final outcome - how do they compare?
+- [x] Check for double counting of repeat calls or at least flag - happy with call level impact (careful with opportunities)
 
 
 ## Backlog
 
-- [ ] Consider the relationship between repeat calls and final outcome - how do they compare?
-- [ ] Check for double counting of repeat calls or at least flag
+### Next
 
-### Next - Issue Prediction
-
-- [ ] Feature clustering to confirm labels
-- [ ] Improve labels based on clusters and/or review misclassified instances
+- [ ] Feature clustering to confirm labels or identify labels within labels
 - [ ] Reattempt multi-class model after clustering and label review
-- [ ] Transcript cleaning and filtering pre-labelling
-
-### Next - Fix Selection
-
-- [ ] Add more filters to risk tiering? Calls in previous 30 days? FTTC vs FTTP etc
-- [ ] Fix dataframe size issue on raw label data view and stress test - connect to GCP and use org streamlit account?
-- [ ] Add prompts / examples on how to use the tiering
-- [ ] Password protection setup added back in (AUTH_ENABLED)
-- [ ] Streamlit Cloud deployment configuration to stop sleeping
-- [ ] Add fixed states using URL parameters
 
 ### Later
 
-- [ ] Rerun on 50-100k rows once v2.1 has built in size
 - [ ] Add model prediction outputs, simple business measures and data science metrics
+- [ ] Improve labels based on clusters and/or review misclassified instances
+- [ ] Add more filters to risk tiering? Calls in previous 30 days? FTTC vs FTTP etc
+- [ ] Fix dataframe size issue on raw label data view and stress test - connect to GCP and use org streamlit account?
+- [ ] Password protection setup added back in (AUTH_ENABLED)
+- [ ] Streamlit Cloud deployment configuration to stop sleeping
+- [ ] Add fixed states using URL parameters
 
 
 ## Support from Emily
