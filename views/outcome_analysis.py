@@ -535,16 +535,16 @@ def render_view(df_filtered):
     })
 
     # calculate percentile scores for each metric
-    risk_df["repeat_score"] = (100 * percent_rank(risk_df["Repeat Call Rate (7d)"])).round(0)
-    risk_df["churn_score"] = (100 * percent_rank(risk_df["BB Churn Rate (30d)"])).round(0)
-    risk_df["cost_score"] = (100 * percent_rank(risk_df["Avg. Outcome Cost (£)"])).round(0)
+    risk_df["repeat_score"] = (100 * percent_rank(risk_df["Repeat Call Rate (7d)"])).round(0).clip(0, 100)
+    risk_df["churn_score"] = (100 * percent_rank(risk_df["BB Churn Rate (30d)"])).round(0).clip(0, 100)
+    risk_df["cost_score"] = (100 * percent_rank(risk_df["Avg. Outcome Cost (£)"])).round(0).clip(0, 100)
 
     # calculate weighted overall risk score
     risk_df["risk_score"] = np.floor(
         (risk_df["repeat_score"] * w_repeat) +
         (risk_df["churn_score"] * w_churn) +
         (risk_df["cost_score"] * w_cost)
-    ).astype(int)
+    ).clip(0, 100).astype(int)
 
     # convert scores to percentage format (0-100 scale) - already at 0-100 from percent_rank
     risk_df["risk_pct"] = risk_df["risk_score"]
@@ -683,30 +683,39 @@ def render_view(df_filtered):
         })
         
         # Map the new metric values to the original percentile distribution from risk_df
-        # Use scipy's percentileofscore to find where each value falls in the original distribution
-        from scipy import stats
+        # Use the same percent_rank formula: (rank - 1) / (n - 1) * 100
         
         # Get original distributions from the FULL risk_df (all labels and outcomes)
         # This ensures percentiles are comparable across all labels
         original_full = risk_df.copy()
         
+        # Function to calculate percentile matching the percent_rank formula
+        def get_percentile(value, original_series):
+            # Add value to series and rank with method='min' to match original behavior
+            temp_series = pd.concat([original_series, pd.Series([value])]).reset_index(drop=True)
+            rank = temp_series.rank(method="min").iloc[-1]
+            n = len(original_series)
+            if n == 1:
+                return 0.0
+            return ((rank - 1) / (n - 1)) * 100
+        
         # Calculate percentile scores by finding where each filtered value ranks in the original distribution
         risk_df_filtered["repeat_score"] = risk_df_filtered["Repeat Call Rate (7d)"].apply(
-            lambda x: stats.percentileofscore(original_full["Repeat Call Rate (7d)"], x, kind='rank')
-        ).round(0)
+            lambda x: get_percentile(x, original_full["Repeat Call Rate (7d)"])
+        ).round(0).clip(0, 100)
         risk_df_filtered["churn_score"] = risk_df_filtered["BB Churn Rate (30d)"].apply(
-            lambda x: stats.percentileofscore(original_full["BB Churn Rate (30d)"], x, kind='rank')
-        ).round(0)
+            lambda x: get_percentile(x, original_full["BB Churn Rate (30d)"])
+        ).round(0).clip(0, 100)
         risk_df_filtered["cost_score"] = risk_df_filtered["Avg. Outcome Cost (£)"].apply(
-            lambda x: stats.percentileofscore(original_full["Avg. Outcome Cost (£)"], x, kind='rank')
-        ).round(0)
+            lambda x: get_percentile(x, original_full["Avg. Outcome Cost (£)"])
+        ).round(0).clip(0, 100)
         
         # Calculate weighted overall risk score using the mapped percentiles
         risk_df_filtered["risk_score"] = np.floor(
             (risk_df_filtered["repeat_score"] * w_repeat) +
             (risk_df_filtered["churn_score"] * w_churn) +
             (risk_df_filtered["cost_score"] * w_cost)
-        ).astype(int)
+        ).clip(0, 100).astype(int)
         
         # Convert scores to percentage format
         risk_df_filtered["risk_pct"] = risk_df_filtered["risk_score"]
@@ -797,7 +806,7 @@ def render_view(df_filtered):
             
             # repeat call risk card
             with card_cols[0]:
-                repeat_color = tier_color_map[row["repeat_tier"]]
+                repeat_color = tier_color_map.get(row["repeat_tier"], "#999999")
                 st.markdown(
                     f'<div style="background-color: {repeat_color}; padding: 6px 4px; border-radius: 4px; text-align: center; color: white; height: 100%; display: flex; align-items: center; justify-content: center;">'
                     f'<div style="font-size: 16px; font-weight: 700; line-height: 1.3;">{row["repeat_pct"]:.0f} <span style="font-weight: 400;">| {row["Repeat Call Rate (7d)"]:.1%} ({same_outcome_pct:.0%} ↻)</span></div>'
@@ -807,7 +816,7 @@ def render_view(df_filtered):
             
             # churn risk card
             with card_cols[1]:
-                churn_color = tier_color_map[row["churn_tier"]]
+                churn_color = tier_color_map.get(row["churn_tier"], "#999999")
                 st.markdown(
                     f'<div style="background-color: {churn_color}; padding: 6px 4px; border-radius: 4px; text-align: center; color: white; height: 100%; display: flex; align-items: center; justify-content: center;">'
                     f'<div style="font-size: 16px; font-weight: 700; line-height: 1.3;">{row["churn_pct"]:.0f} <span style="font-weight: 400;">| {row["BB Churn Rate (30d)"]:.1%}</span></div>'
@@ -817,7 +826,7 @@ def render_view(df_filtered):
             
             # cost risk card
             with card_cols[2]:
-                cost_color = tier_color_map[row["cost_tier"]]
+                cost_color = tier_color_map.get(row["cost_tier"], "#999999")
                 st.markdown(
                     f'<div style="background-color: {cost_color}; padding: 6px 4px; border-radius: 4px; text-align: center; color: white; height: 100%; display: flex; align-items: center; justify-content: center;">'
                     f'<div style="font-size: 16px; font-weight: 700; line-height: 1.3;">{row["cost_pct"]:.0f} <span style="font-weight: 400;">| £{row["Avg. Outcome Cost (£)"]:.0f}</span></div>'
@@ -827,7 +836,7 @@ def render_view(df_filtered):
             
             # overall risk card
             with col_overall:
-                overall_color = tier_color_map[row["risk_tier"]]
+                overall_color = tier_color_map.get(row["risk_tier"], "#999999")
                 asterisk = "*" if row["volume"] < 250 else ""
                 st.markdown(
                     f'<div style="background-color: {overall_color}; padding: 6px 4px; border-radius: 4px; text-align: center; color: white; border: 2px solid #333; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">'
@@ -1234,16 +1243,16 @@ def render_view(df_filtered):
     })
 
     # calculate percentile scores for each metric
-    risk_df_suggested["repeat_score"] = (100 * percent_rank_suggested(risk_df_suggested["Repeat Call Rate (7d)"])).round(0)
-    risk_df_suggested["churn_score"] = (100 * percent_rank_suggested(risk_df_suggested["BB Churn Rate (30d)"])).round(0)
-    risk_df_suggested["cost_score"] = (100 * percent_rank_suggested(risk_df_suggested["Avg. Outcome Cost (£)"])).round(0)
+    risk_df_suggested["repeat_score"] = (100 * percent_rank_suggested(risk_df_suggested["Repeat Call Rate (7d)"])).round(0).clip(0, 100)
+    risk_df_suggested["churn_score"] = (100 * percent_rank_suggested(risk_df_suggested["BB Churn Rate (30d)"])).round(0).clip(0, 100)
+    risk_df_suggested["cost_score"] = (100 * percent_rank_suggested(risk_df_suggested["Avg. Outcome Cost (£)"])).round(0).clip(0, 100)
 
     # calculate weighted overall risk score
     risk_df_suggested["risk_score"] = np.floor(
         (risk_df_suggested["repeat_score"] * w_repeat_suggested) +
         (risk_df_suggested["churn_score"] * w_churn_suggested) +
         (risk_df_suggested["cost_score"] * w_cost_suggested)
-    ).astype(int)
+    ).clip(0, 100).astype(int)
 
     # convert scores to percentage format (0-100 scale) - already at 0-100 from percent_rank
     risk_df_suggested["risk_pct"] = risk_df_suggested["risk_score"]
@@ -1364,30 +1373,39 @@ def render_view(df_filtered):
         })
         
         # Map the new metric values to the original percentile distribution from risk_df_suggested
-        # Use scipy's percentileofscore to find where each value falls in the original distribution
-        from scipy import stats
+        # Use the same percent_rank formula: (rank - 1) / (n - 1) * 100
         
         # Get original distributions from the FULL risk_df_suggested (all labels and outcomes)
         # This ensures percentiles are comparable across all labels
         original_full_suggested = risk_df_suggested.copy()
         
+        # Function to calculate percentile matching the percent_rank formula
+        def get_percentile_suggested(value, original_series):
+            # Add value to series and rank with method='min' to match original behavior
+            temp_series = pd.concat([original_series, pd.Series([value])]).reset_index(drop=True)
+            rank = temp_series.rank(method="min").iloc[-1]
+            n = len(original_series)
+            if n == 1:
+                return 0.0
+            return ((rank - 1) / (n - 1)) * 100
+        
         # Calculate percentile scores by finding where each filtered value ranks in the original distribution
         risk_df_suggested_filtered["repeat_score"] = risk_df_suggested_filtered["Repeat Call Rate (7d)"].apply(
-            lambda x: stats.percentileofscore(original_full_suggested["Repeat Call Rate (7d)"], x, kind='rank')
-        ).round(0)
+            lambda x: get_percentile_suggested(x, original_full_suggested["Repeat Call Rate (7d)"])
+        ).round(0).clip(0, 100)
         risk_df_suggested_filtered["churn_score"] = risk_df_suggested_filtered["BB Churn Rate (30d)"].apply(
-            lambda x: stats.percentileofscore(original_full_suggested["BB Churn Rate (30d)"], x, kind='rank')
-        ).round(0)
+            lambda x: get_percentile_suggested(x, original_full_suggested["BB Churn Rate (30d)"])
+        ).round(0).clip(0, 100)
         risk_df_suggested_filtered["cost_score"] = risk_df_suggested_filtered["Avg. Outcome Cost (£)"].apply(
-            lambda x: stats.percentileofscore(original_full_suggested["Avg. Outcome Cost (£)"], x, kind='rank')
-        ).round(0)
+            lambda x: get_percentile_suggested(x, original_full_suggested["Avg. Outcome Cost (£)"])
+        ).round(0).clip(0, 100)
         
         # Calculate weighted overall risk score using the mapped percentiles
         risk_df_suggested_filtered["risk_score"] = np.floor(
             (risk_df_suggested_filtered["repeat_score"] * w_repeat_suggested) +
             (risk_df_suggested_filtered["churn_score"] * w_churn_suggested) +
             (risk_df_suggested_filtered["cost_score"] * w_cost_suggested)
-        ).astype(int)
+        ).clip(0, 100).astype(int)
         
         # Convert scores to percentage format
         risk_df_suggested_filtered["risk_pct"] = risk_df_suggested_filtered["risk_score"]
@@ -1469,7 +1487,7 @@ def render_view(df_filtered):
             
             # repeat call risk card
             with card_cols_suggested[0]:
-                repeat_color_suggested = tier_color_map[row["repeat_tier"]]
+                repeat_color_suggested = tier_color_map.get(row["repeat_tier"], "#999999")
                 st.markdown(
                     f'<div style="background-color: {repeat_color_suggested}; padding: 6px 4px; border-radius: 4px; text-align: center; color: white; height: 100%; display: flex; align-items: center; justify-content: center;">'
                     f'<div style="font-size: 16px; font-weight: 700; line-height: 1.3;">{row["repeat_pct"]:.0f} <span style="font-weight: 400;">| {row["Repeat Call Rate (7d)"]:.1%}</span></div>'
@@ -1479,7 +1497,7 @@ def render_view(df_filtered):
             
             # churn risk card
             with card_cols_suggested[1]:
-                churn_color_suggested = tier_color_map[row["churn_tier"]]
+                churn_color_suggested = tier_color_map.get(row["churn_tier"], "#999999")
                 st.markdown(
                     f'<div style="background-color: {churn_color_suggested}; padding: 6px 4px; border-radius: 4px; text-align: center; color: white; height: 100%; display: flex; align-items: center; justify-content: center;">'
                     f'<div style="font-size: 16px; font-weight: 700; line-height: 1.3;">{row["churn_pct"]:.0f} <span style="font-weight: 400;">| {row["BB Churn Rate (30d)"]:.1%}</span></div>'
@@ -1489,7 +1507,7 @@ def render_view(df_filtered):
             
             # cost risk card
             with card_cols_suggested[2]:
-                cost_color_suggested = tier_color_map[row["cost_tier"]]
+                cost_color_suggested = tier_color_map.get(row["cost_tier"], "#999999")
                 st.markdown(
                     f'<div style="background-color: {cost_color_suggested}; padding: 6px 4px; border-radius: 4px; text-align: center; color: white; height: 100%; display: flex; align-items: center; justify-content: center;">'
                     f'<div style="font-size: 16px; font-weight: 700; line-height: 1.3;">{row["cost_pct"]:.0f} <span style="font-weight: 400;">| £{row["Avg. Outcome Cost (£)"]:.0f}</span></div>'
@@ -1499,7 +1517,7 @@ def render_view(df_filtered):
             
             # overall risk card
             with col_overall_suggested:
-                overall_color_suggested = tier_color_map[row["risk_tier"]]
+                overall_color_suggested = tier_color_map.get(row["risk_tier"], "#999999")
                 asterisk_suggested = "*" if row["volume"] < 250 else ""
                 st.markdown(
                     f'<div style="background-color: {overall_color_suggested}; padding: 6px 4px; border-radius: 4px; text-align: center; color: white; border: 2px solid #333; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">'
