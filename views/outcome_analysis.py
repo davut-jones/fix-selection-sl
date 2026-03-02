@@ -254,7 +254,7 @@ def render_view(df_filtered):
     # info box
     st.write("\n\n")
     st.info(
-        "Outcomes ranked across three risk metrics: Repeat Call Rate (7d), BB Churn (30d), and Cost. Risk scores are calculated across all outcomes and labels. Adjust tier boundaries and metric weights to refine tiers."
+        "Outcomes ranked across three risk metrics: Repeat Call Rate (7d), BB Churn (30d), and Cost Risk scores are calculated across all outcomes and labels. Adjust tier boundaries and metric weights to refine tiers."
     )
     # if risk_combinations_removed > 0:
     #     st.warning(f"⚠️ {risk_combinations_removed} label/outcome combination(s) excluded from risk analysis (< {min_call_threshold} calls per combination)")
@@ -686,8 +686,9 @@ def render_view(df_filtered):
         # Use scipy's percentileofscore to find where each value falls in the original distribution
         from scipy import stats
         
-        # Get original distributions from the full risk_df for this label
-        original_full = risk_df[risk_df["Label"] == selected_label].copy()
+        # Get original distributions from the FULL risk_df (all labels and outcomes)
+        # This ensures percentiles are comparable across all labels
+        original_full = risk_df.copy()
         
         # Calculate percentile scores by finding where each filtered value ranks in the original distribution
         risk_df_filtered["repeat_score"] = risk_df_filtered["Repeat Call Rate (7d)"].apply(
@@ -956,7 +957,7 @@ def render_view(df_filtered):
     # info box
     st.write("\n\n")
     st.info(
-        "Outcomes ranked across three risk metrics: Repeat Call Rate (7d), BB Churn (30d), and Cost. Risk scores are calculated across all outcomes and labels. Adjust tier boundaries and metric weights to refine tiers."
+        "Outcomes ranked across three risk metrics: Repeat Call Rate (7d), BB Churn (30d), and Cost Risk scores are calculated across all outcomes and labels. Adjust tier boundaries and metric weights to refine tiers."
     )
     # if risk_suggested_combinations_removed > 0:
     #     st.warning(f"⚠️ {risk_suggested_combinations_removed} label/outcome combination(s) excluded from risk analysis (< {min_call_threshold} calls per combination)")
@@ -1366,8 +1367,9 @@ def render_view(df_filtered):
         # Use scipy's percentileofscore to find where each value falls in the original distribution
         from scipy import stats
         
-        # Get original distributions from the full risk_df_suggested for this label
-        original_full_suggested = risk_df_suggested[risk_df_suggested["Label"] == selected_label_suggested].copy()
+        # Get original distributions from the FULL risk_df_suggested (all labels and outcomes)
+        # This ensures percentiles are comparable across all labels
+        original_full_suggested = risk_df_suggested.copy()
         
         # Calculate percentile scores by finding where each filtered value ranks in the original distribution
         risk_df_suggested_filtered["repeat_score"] = risk_df_suggested_filtered["Repeat Call Rate (7d)"].apply(
